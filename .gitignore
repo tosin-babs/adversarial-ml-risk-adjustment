@@ -1,0 +1,34 @@
+# ---- project instruction files (not for publication) ----
+# Anchored to the repo root: the instruction file sits there, while the
+# manuscript lives in manuscript/ and must NOT be caught by this.
+/Paper?_*.md
+/*_Instructions.md
+
+# ---- survey microdata: never redistributed ----
+data/raw/
+data/derived/
+*.zip
+*.dta
+*.sav
+
+# ---- environments and caches ----
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.Rproj.user/
+.Rhistory
+
+# ---- OS / editor ----
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.claude/
+data/derived/oof/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.env.local
+.vercel/

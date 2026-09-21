@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it as below."
+title: "Adversarial Machine Learning for Medicare Risk Adjustment: Training Payment Formulas Against a Strategic Health Plan"
+authors:
+  - family-names: Ologunbaba
+    given-names: Temitope
+    email: ologubabatopeeee2351@futa.edu.ng
+    affiliation: "Faculty of Engineering, Federal University of Technology, Akure, Nigeria"
+  - family-names: Adiegwu
+    given-names: Chisom
+    affiliation: "Department of Actuarial Science and Quantitative Risk Analysis and Management, Georgia State University, Atlanta, GA, USA"
+  - family-names: Temitope
+    given-names: Adebolu
+    affiliation: "Federal University of Technology, Akure, Nigeria"
+version: 0.1.0
+date-released: 2026-09-22
+repository-code: "https://github.com/tosin-babs/adversarial-ml-risk-adjustment"
+license: MIT
+keywords:
+  - risk adjustment
+  - upcoding
+  - risk selection
+  - adversarial machine learning
+  - strategic classification
+  - distributionally robust optimization
+  - Medicare Advantage
+  - MEPS
