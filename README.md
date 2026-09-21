@@ -73,7 +73,7 @@ Strategic Health Plan*. Working paper.
 
 - Temitope Ologunbaba, Faculty of Engineering, Federal University of Technology, Akure, Nigeria, ologubabatopeeee2351@futa.edu.ng (corresponding)
 - Chisom Adiegwu, Department of Actuarial Science and Quantitative Risk Analysis and Management, Georgia State University, Atlanta, GA, USA
-- Adebolu Temitope, Federal University of Technology, Akure, Nigeria
+- Adebolu Temitope, Department of Epidemiology and Medical Statistics, University of Ibadan, Ibadan, Nigeria
 
 ## License
 

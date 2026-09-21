@@ -6,7 +6,7 @@
 
 ² Department of Actuarial Science and Quantitative Risk Analysis and Management, Georgia State University, Atlanta, GA, USA.
 
-³ Federal University of Technology, Akure, Nigeria.
+³ Department of Epidemiology and Medical Statistics, University of Ibadan, Ibadan, Nigeria.
 
 **Word count.** 4,599 excluding abstract, tables, figure captions and references.
 
