@@ -16,59 +16,84 @@
 | Fair stacked (paper 6) | F3 | none | no |
 | CMS form, cost-capped | F2 | cap at incremental cost | no |
 | CMS form, coding-penalized (lambda=1) | F2 | coding penalty | no |
+| CMS form, coding penalty tuned against the plan (Stackelberg) | F2 | coding penalty, weight chosen against the plan's response | tuned |
 | CMS form, DRO (lambda=5) | F2 | worst-subgroup penalty | no |
-| CMS form, capped + penalized + DRO (lambda=1) | F2 | cap, coding penalty, worst-subgroup penalty | no |
+| CMS form, capped + coding penalty + DRO (DRO lambda=1) | F2 | cap, coding penalty, worst-subgroup penalty | no |
 | Boosting, capped + DRO | F3 | cap, worst-subgroup penalty on the linear layer | no |
-| CMS form, trained against the plan | F2 | as the base formula | yes |
-| CMS form, coding-penalized, trained against the plan | F2 | as the base formula | yes |
-| CMS form, capped + penalized + DRO, trained against the plan | F2 | as the base formula | yes |
-| Boosting, capped + DRO, trained against the plan | F3 | as the base formula | yes |
+| CMS form, trained against the plan | F2 | as the base formula | retrained |
+| CMS form, coding-penalized, trained against the plan | F2 | as the base formula | retrained |
+| CMS form, capped + penalized + DRO, trained against the plan | F2 | as the base formula | retrained |
+| Boosting, capped + DRO, trained against the plan | F3 | as the base formula | retrained |
 
-**Table 2.** Calibrating the plan against the CMS form.
+**Table 2.** Calibrating the plan against the CMS form, on training rows.
 
-*Coding: one code per reviewed person at $1,000 per code, by chart-review reach; the calibrated reach is 6%, where the gross payment rise is closest to the target of 10.1% (MedPAC's 16% coding intensity less the 5.9% statutory adjustment). Selection: threshold rule by tilt; the calibrated tilt is 0.20, where the plan's profit is closest to 8.8% of payment (MedPAC's $44 billion of favorable selection on about $500 billion of payment). Means over the 15 test folds.*
+*One code per reviewed person at $1,000 a code, with audit exposure of $2,000 per 1% of enrollees already given the same code. Targets: coding 9.5% and selection 10.5% of base payment (MedPAC's $40 billion and $44 billion over a fee-for-service-equivalent base of about $420 billion). The calibrated point is 6% reach and tilt 0.20. Upper panel: by reach at the calibrated tilt. Lower panel: by tilt at the calibrated reach. Means over the training rows of the 15 splits.*
 
-| Reach | Payment rise | Net of code cost | Codes per 1,000 |
+| Reach | Coding | Selection | Codes per 1,000 | Distinct codes | Top code share | Distance (points) |
+|---|---:|---:|---:|---:|---:|---:|
+| 2% | 3.4% | 9.4% | 20 | 4.7 | 47% | 6.2 |
+| 4% | 6.3% | 9.8% | 40 | 7.3 | 39% | 3.2 |
+| 5% | 7.7% | 10.1% | 50 | 8.3 | 35% | 1.9 |
+| 6% | 8.9% | 10.3% | 60 | 8.9 | 32% | 0.6 |
+| 7.5% | 10.7% | 10.5% | 75 | 10.3 | 29% | 1.2 |
+| 10% | 13.4% | 11.0% | 100 | 12.3 | 25% | 3.9 |
+| 12.5% | 15.9% | 11.4% | 125 | 14.7 | 22% | 6.4 |
+| 15% | 18.2% | 11.8% | 150 | 16.3 | 20% | 8.7 |
+| 20% | 22.2% | 12.5% | 200 | 21.3 | 17% | 12.8 |
+| 25% | 25.7% | 13.1% | 250 | 26.1 | 15% | 16.3 |
+| 50% | 37.2% | 15.6% | 500 | 56.7 | 9% | 28.2 |
+| 100% | 40.6% | 15.5% | 686 | 82.7 | 7% | 31.5 |
+
+| Tilt | Coding | Selection | Distance (points) |
 |---|---:|---:|---:|
-| 2% | 3.5% | 3.2% | 20 |
-| 4% | 6.9% | 6.4% | 40 |
-| 5% | 8.6% | 8.0% | 50 |
-| 6% | 10.4% | 9.6% | 60 |
-| 8% | 13.0% | 12.0% | 75 |
-| 10% | 17.3% | 16.0% | 100 |
-| 25% | 43.1% | 39.9% | 250 |
-| 50% | 82.7% | 76.3% | 500 |
-| 100% | 97.7% | 88.7% | 707 |
-
-| Tilt | Payment shift | Profit, share of payment |
-|---|---:|---:|
-| 0.00 | 0.0% | 0.0% |
-| 0.05 | 1.4% | 2.1% |
-| 0.10 | 2.8% | 4.2% |
-| 0.20 | 5.6% | 8.5% |
-| 0.30 | 8.4% | 12.7% |
-| 0.50 | 13.9% | 21.2% |
+| 0.00 | 8.9% | 0.0% | 10.5 |
+| 0.05 | 8.9% | 2.6% | 7.9 |
+| 0.10 | 8.9% | 5.1% | 5.4 |
+| 0.15 | 8.9% | 7.7% | 2.9 |
+| 0.20 | 8.9% | 10.3% | 0.6 |
+| 0.25 | 8.9% | 12.8% | 2.4 |
+| 0.30 | 8.9% | 15.4% | 4.9 |
+| 0.50 | 8.9% | 25.6% | 15.2 |
 
 **Table 3.** What the calibrated plan extracts from each formula, per 1,000 enrollees.
 
-*Coding: payment for added codes, net of the cost of adding them, for codes that change nothing about cost. Selection: payment above cost from tilting enrollment toward the half of enrollees the plan expects to be overpaid. Share is of base payment. 95% bootstrap intervals in parentheses.*
+*Coding: payment for added codes, net of the cost of adding them, for codes that change nothing about cost. Selection: payment above cost from tilting enrollment toward the half of enrollees the plan expects to be overpaid, split in the lower panel into the part on the formula's ungamed payment and the part from tilting toward people the plan coded. Share is of base payment. 95% bootstrap intervals in parentheses; fold range over the 15 test folds. Distinct codes and top code share describe the plan's coding per fold.*
 
 | Formula | Coding |  | Selection |  | Total |  | Share |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| CMS form | $748,542 | ($723,936 to $771,061) | $769,238 | ($716,652 to $810,016) | $1,517,780 | ($1,460,172 to $1,568,914) | 19.5% |
-| CMS form, with prior use | $653,070 | ($631,884 to $673,387) | $703,912 | ($658,812 to $754,219) | $1,356,983 | ($1,296,406 to $1,405,978) | 17.4% |
-| Unconstrained WLS | $677,427 | ($652,390 to $708,232) | $832,084 | ($784,154 to $881,841) | $1,509,511 | ($1,457,682 to $1,576,770) | 19.3% |
-| Tweedie boosting | $646,352 | ($620,422 to $674,848) | $120,911 | ($75,171 to $164,084) | $767,263 | ($710,335 to $824,487) | 9.9% |
-| Fair stacked (paper 6) | $1,037,444 | ($998,124 to $1,073,769) | $649,716 | ($594,976 to $701,265) | $1,687,160 | ($1,618,672 to $1,763,305) | 21.7% |
-| CMS form, cost-capped | $748,628 | ($728,018 to $773,942) | $765,216 | ($712,357 to $811,450) | $1,513,844 | ($1,456,859 to $1,567,525) | 19.4% |
-| CMS form, coding-penalized (lambda=1) | $92,274 | ($89,176 to $95,668) | $683,864 | ($629,016 to $736,720) | $776,138 | ($720,404 to $829,849) | 10.0% |
-| CMS form, DRO (lambda=5) | $404,936 | ($391,269 to $418,282) | $669,386 | ($621,229 to $721,810) | $1,074,322 | ($1,027,400 to $1,129,768) | 13.8% |
-| CMS form, capped + penalized + DRO (lambda=1) | $174,519 | ($168,995 to $181,340) | $668,490 | ($621,787 to $712,724) | $843,010 | ($796,975 to $888,107) | 10.8% |
-| Boosting, capped + DRO | $645,067 | ($619,426 to $673,805) | $121,814 | ($82,028 to $171,847) | $766,880 | ($714,405 to $824,581) | 9.9% |
-| CMS form, trained against the plan | $675,101 | ($655,033 to $697,493) | $711,243 | ($656,587 to $763,313) | $1,386,344 | ($1,326,577 to $1,440,619) | 19.7% |
-| CMS form, coding-penalized, trained against the plan | $77,193 | ($74,844 to $80,062) | $646,544 | ($597,475 to $695,659) | $723,737 | ($675,732 to $772,690) | 10.3% |
-| CMS form, capped + penalized + DRO, trained against the plan | $119,568 | ($115,284 to $123,703) | $628,614 | ($578,513 to $677,850) | $748,183 | ($700,106 to $797,069) | 10.7% |
-| Boosting, capped + DRO, trained against the plan | $1,060,061 | ($1,008,162 to $1,126,272) | $254,853 | ($201,956 to $306,191) | $1,314,914 | ($1,229,106 to $1,409,117) | 17.1% |
+| CMS form | $566,291 | ($548,206 to $584,798) | $771,309 | ($721,612 to $813,610) | $1,337,599 | ($1,282,598 to $1,385,782) | 17.1% |
+| CMS form, with prior use | $463,722 | ($446,878 to $477,951) | $696,466 | ($647,977 to $736,800) | $1,160,188 | ($1,105,496 to $1,203,527) | 14.9% |
+| Unconstrained WLS | $482,100 | ($464,715 to $502,726) | $829,713 | ($781,623 to $871,768) | $1,311,813 | ($1,260,470 to $1,365,028) | 16.8% |
+| Tweedie boosting | $520,346 | ($497,570 to $543,906) | $234,953 | ($199,704 to $273,988) | $755,299 | ($711,739 to $803,995) | 9.7% |
+| Fair stacked (paper 6) | $902,143 | ($868,774 to $935,203) | $654,898 | ($604,981 to $710,089) | $1,557,041 | ($1,487,068 to $1,634,806) | 20.1% |
+| CMS form, cost-capped | $566,257 | ($549,586 to $582,161) | $762,444 | ($712,941 to $804,833) | $1,328,701 | ($1,275,496 to $1,375,657) | 17.0% |
+| CMS form, coding-penalized (lambda=1) | $66,357 | ($64,343 to $68,767) | $677,077 | ($625,573 to $726,535) | $743,433 | ($692,036 to $792,697) | 9.5% |
+| CMS form, coding penalty tuned against the plan (Stackelberg) | $39,308 | ($37,688 to $40,978) | $691,861 | ($639,506 to $742,985) | $731,169 | ($678,528 to $783,013) | 9.4% |
+| CMS form, DRO (lambda=5) | $286,729 | ($277,475 to $295,253) | $666,919 | ($618,912 to $725,718) | $953,648 | ($902,913 to $1,010,814) | 12.2% |
+| CMS form, capped + coding penalty + DRO (DRO lambda=1) | $106,259 | ($102,168 to $111,387) | $667,791 | ($617,238 to $713,874) | $774,050 | ($725,096 to $819,090) | 9.9% |
+| Boosting, capped + DRO | $519,037 | ($496,548 to $542,129) | $241,331 | ($205,183 to $281,063) | $760,367 | ($717,896 to $809,795) | 9.8% |
+| CMS form, trained against the plan | $391,941 | ($379,132 to $405,833) | $730,448 | ($684,348 to $775,746) | $1,122,389 | ($1,075,731 to $1,175,787) | 14.4% |
+| CMS form, coding-penalized, trained against the plan | $67,540 | ($65,098 to $69,963) | $681,326 | ($631,950 to $728,484) | $748,865 | ($700,016 to $795,941) | 9.6% |
+| CMS form, capped + penalized + DRO, trained against the plan | $104,752 | ($100,637 to $109,665) | $672,676 | ($623,149 to $719,772) | $777,428 | ($727,893 to $824,058) | 10.0% |
+| Boosting, capped + DRO, trained against the plan | $479,388 | ($457,384 to $504,496) | $196,385 | ($162,548 to $236,885) | $675,774 | ($631,538 to $726,524) | 8.7% |
+
+| Formula | Selection on ungamed payment | Selection on coded people | Lowest fold | Highest fold | Distinct codes used | Top code share |
+|---|---:|---:|---:|---:|---:|---:|
+| CMS form | $651,605 | $119,704 | $1,251,632 | $1,407,072 | 6.0 | 41% |
+| CMS form, with prior use | $599,792 | $96,674 | $1,078,185 | $1,233,882 | 5.8 | 42% |
+| Unconstrained WLS | $721,039 | $108,675 | $1,150,251 | $1,468,181 | 6.9 | 43% |
+| Tweedie boosting | $105,659 | $129,294 | $448,410 | $977,015 | 13.5 | 43% |
+| Fair stacked (paper 6) | $441,823 | $213,075 | $1,090,419 | $1,931,086 | 7.5 | 43% |
+| CMS form, cost-capped | $643,341 | $119,102 | $1,238,148 | $1,423,687 | 6.0 | 41% |
+| CMS form, coding-penalized (lambda=1) | $667,466 | $9,611 | $657,834 | $853,432 | 124.0 | 5% |
+| CMS form, coding penalty tuned against the plan (Stackelberg) | $687,387 | $4,474 | $630,942 | $866,181 | 107.0 | 3% |
+| CMS form, DRO (lambda=5) | $610,309 | $56,610 | $854,928 | $1,095,242 | 9.9 | 26% |
+| CMS form, capped + coding penalty + DRO (DRO lambda=1) | $649,004 | $18,787 | $684,372 | $901,776 | 28.2 | 16% |
+| Boosting, capped + DRO | $112,596 | $128,735 | $431,773 | $972,914 | 13.4 | 43% |
+| CMS form, trained against the plan | $651,317 | $79,131 | $1,016,261 | $1,327,339 | 9.2 | 30% |
+| CMS form, coding-penalized, trained against the plan | $671,672 | $9,654 | $674,514 | $863,037 | 124.0 | 6% |
+| CMS form, capped + penalized + DRO, trained against the plan | $657,428 | $15,247 | $675,619 | $895,435 | 27.3 | 16% |
+| Boosting, capped + DRO, trained against the plan | $88,310 | $108,075 | $392,387 | $1,134,344 | 18.1 | 32% |
 
 **Table 4.** Accuracy before and after the plan responds.
 
@@ -76,20 +101,21 @@
 
 | Formula | R², ungamed |  | R², post-response |  | Difference from CMS form |
 |---|---:|---:|---:|---:|---:|
-| CMS form | 0.098 | (0.076 to 0.130) | 0.075 | (0.060 to 0.098) | 0.000 |
-| CMS form, with prior use | 0.108 | (0.085 to 0.141) | 0.088 | (0.071 to 0.115) | 0.010 |
-| Unconstrained WLS | 0.123 | (0.102 to 0.155) | 0.094 | (0.079 to 0.118) | 0.025 |
-| Tweedie boosting | 0.187 | (0.156 to 0.242) | 0.176 | (0.148 to 0.225) | 0.089 |
-| Fair stacked (paper 6) | 0.169 | (0.142 to 0.215) | 0.124 | (0.098 to 0.160) | 0.072 |
-| CMS form, cost-capped | 0.098 | (0.076 to 0.130) | 0.074 | (0.057 to 0.097) | 0.000 |
-| CMS form, coding-penalized (lambda=1) | 0.096 | (0.074 to 0.127) | 0.089 | (0.071 to 0.115) | -0.002 |
-| CMS form, DRO (lambda=5) | 0.102 | (0.078 to 0.135) | 0.091 | (0.072 to 0.117) | 0.004 |
-| CMS form, capped + penalized + DRO (lambda=1) | 0.098 | (0.075 to 0.130) | 0.090 | (0.071 to 0.117) | 0.000 |
-| Boosting, capped + DRO | 0.187 | (0.156 to 0.242) | 0.176 | (0.148 to 0.227) | 0.089 |
-| CMS form, trained against the plan | 0.098 | (0.075 to 0.129) | 0.083 | (0.065 to 0.109) | -0.000 |
-| CMS form, coding-penalized, trained against the plan | 0.094 | (0.072 to 0.124) | 0.091 | (0.071 to 0.117) | -0.003 |
-| CMS form, capped + penalized + DRO, trained against the plan | 0.096 | (0.073 to 0.127) | 0.092 | (0.072 to 0.119) | -0.002 |
-| Boosting, capped + DRO, trained against the plan | 0.175 | (0.141 to 0.227) | 0.155 | (0.127 to 0.201) | 0.077 |
+| CMS form | 0.098 | (0.076 to 0.130) | 0.078 | (0.061 to 0.103) | 0.000 |
+| CMS form, with prior use | 0.108 | (0.085 to 0.141) | 0.091 | (0.074 to 0.119) | 0.010 |
+| Unconstrained WLS | 0.123 | (0.102 to 0.155) | 0.099 | (0.084 to 0.122) | 0.025 |
+| Tweedie boosting | 0.187 | (0.156 to 0.242) | 0.175 | (0.148 to 0.225) | 0.089 |
+| Fair stacked (paper 6) | 0.169 | (0.142 to 0.215) | 0.123 | (0.095 to 0.161) | 0.072 |
+| CMS form, cost-capped | 0.098 | (0.076 to 0.130) | 0.079 | (0.062 to 0.105) | 0.000 |
+| CMS form, coding-penalized (lambda=1) | 0.096 | (0.074 to 0.127) | 0.089 | (0.070 to 0.116) | -0.002 |
+| CMS form, coding penalty tuned against the plan (Stackelberg) | 0.091 | (0.069 to 0.118) | 0.085 | (0.066 to 0.109) | -0.007 |
+| CMS form, DRO (lambda=5) | 0.102 | (0.078 to 0.135) | 0.092 | (0.072 to 0.121) | 0.004 |
+| CMS form, capped + coding penalty + DRO (DRO lambda=1) | 0.099 | (0.076 to 0.130) | 0.091 | (0.072 to 0.118) | 0.001 |
+| Boosting, capped + DRO | 0.187 | (0.156 to 0.242) | 0.176 | (0.149 to 0.225) | 0.089 |
+| CMS form, trained against the plan | 0.099 | (0.076 to 0.130) | 0.087 | (0.069 to 0.115) | 0.001 |
+| CMS form, coding-penalized, trained against the plan | 0.097 | (0.074 to 0.127) | 0.089 | (0.070 to 0.116) | -0.001 |
+| CMS form, capped + penalized + DRO, trained against the plan | 0.099 | (0.075 to 0.130) | 0.091 | (0.072 to 0.118) | 0.001 |
+| Boosting, capped + DRO, trained against the plan | 0.186 | (0.154 to 0.239) | 0.182 | (0.152 to 0.237) | 0.088 |
 
 **Table 5.** The price of robustness: accuracy against extraction along each penalty grid.
 
@@ -97,28 +123,28 @@
 
 | Formula | R², ungamed | Coding | Selection | Total | Share |
 |---|---:|---:|---:|---:|---:|
-| CMS form | 0.098 | $748,542 | $769,238 | $1,517,780 | 19.5% |
-| CMS form, cost-capped | 0.098 | $748,628 | $765,216 | $1,513,844 | 19.4% |
-| CMS form, coding-penalized (lambda=0.5) | 0.097 | $109,009 | $677,627 | $786,636 | 10.1% |
-| CMS form, coding-penalized (lambda=1) | 0.096 | $92,274 | $683,864 | $776,138 | 10.0% |
-| CMS form, coding-penalized (lambda=2) | 0.095 | $75,625 | $678,335 | $753,961 | 9.7% |
-| CMS form, coding-penalized (lambda=5) | 0.091 | $48,464 | $673,976 | $722,441 | 9.3% |
-| CMS form, coding-penalized (lambda=10) | 0.085 | $23,077 | $690,668 | $713,744 | 9.2% |
-| CMS form, coding-penalized (lambda=20) | 0.074 | $0 | $747,044 | $747,044 | 9.6% |
-| CMS form, coding-penalized (lambda=50) | 0.060 | $0 | $836,286 | $836,286 | 10.7% |
-| CMS form, DRO (lambda=1) | 0.102 | $428,440 | $669,483 | $1,097,923 | 14.1% |
-| CMS form, DRO (lambda=2) | 0.102 | $413,126 | $683,405 | $1,096,531 | 14.1% |
-| CMS form, DRO (lambda=5) | 0.102 | $404,936 | $669,386 | $1,074,322 | 13.8% |
-| CMS form, DRO (lambda=10) | 0.102 | $402,085 | $679,813 | $1,081,898 | 13.9% |
-| CMS form, DRO (lambda=20) | 0.101 | $400,597 | $678,900 | $1,079,496 | 13.9% |
-| CMS form, DRO (lambda=50) | 0.101 | $399,511 | $678,964 | $1,078,476 | 13.8% |
-| CMS form, capped + penalized + DRO (lambda=0.5) | 0.099 | $177,473 | $670,134 | $847,607 | 10.9% |
-| CMS form, capped + penalized + DRO (lambda=1) | 0.098 | $174,519 | $668,490 | $843,010 | 10.8% |
-| CMS form, capped + penalized + DRO (lambda=2) | 0.098 | $173,019 | $669,959 | $842,978 | 10.8% |
-| CMS form, capped + penalized + DRO (lambda=5) | 0.098 | $172,127 | $669,480 | $841,607 | 10.8% |
-| CMS form, capped + penalized + DRO (lambda=10) | 0.098 | $171,687 | $668,972 | $840,660 | 10.8% |
-| CMS form, capped + penalized + DRO (lambda=20) | 0.098 | $171,450 | $674,861 | $846,311 | 10.9% |
-| CMS form, capped + penalized + DRO (lambda=50) | 0.098 | $171,484 | $667,726 | $839,209 | 10.8% |
+| CMS form | 0.098 | $566,291 | $771,309 | $1,337,599 | 17.1% |
+| CMS form, cost-capped | 0.098 | $566,257 | $762,444 | $1,328,701 | 17.0% |
+| CMS form, coding-penalized (lambda=0.5) | 0.097 | $73,566 | $682,237 | $755,802 | 9.7% |
+| CMS form, coding-penalized (lambda=1) | 0.096 | $66,357 | $677,077 | $743,433 | 9.5% |
+| CMS form, coding-penalized (lambda=2) | 0.095 | $58,186 | $680,053 | $738,239 | 9.5% |
+| CMS form, coding-penalized (lambda=5) | 0.091 | $38,242 | $686,361 | $724,602 | 9.3% |
+| CMS form, coding-penalized (lambda=10) | 0.085 | $16,084 | $706,459 | $722,543 | 9.3% |
+| CMS form, coding-penalized (lambda=20) | 0.075 | $0 | $758,024 | $758,024 | 9.7% |
+| CMS form, coding-penalized (lambda=50) | 0.060 | $0 | $845,534 | $845,534 | 10.8% |
+| CMS form, DRO (lambda=1) | 0.102 | $306,274 | $658,789 | $965,064 | 12.4% |
+| CMS form, DRO (lambda=2) | 0.102 | $294,272 | $675,197 | $969,469 | 12.4% |
+| CMS form, DRO (lambda=5) | 0.102 | $286,729 | $666,919 | $953,648 | 12.2% |
+| CMS form, DRO (lambda=10) | 0.102 | $284,341 | $678,875 | $963,216 | 12.4% |
+| CMS form, DRO (lambda=20) | 0.101 | $283,146 | $673,380 | $956,526 | 12.3% |
+| CMS form, DRO (lambda=50) | 0.101 | $282,189 | $678,777 | $960,967 | 12.3% |
+| CMS form, capped + coding penalty + DRO (DRO lambda=0) | 0.096 | $66,539 | $681,910 | $748,448 | 9.6% |
+| CMS form, capped + coding penalty + DRO (DRO lambda=1) | 0.099 | $106,259 | $667,791 | $774,050 | 9.9% |
+| CMS form, capped + coding penalty + DRO (DRO lambda=2) | 0.099 | $129,402 | $665,366 | $794,768 | 10.2% |
+| CMS form, capped + coding penalty + DRO (DRO lambda=5) | 0.100 | $167,971 | $660,533 | $828,504 | 10.6% |
+| CMS form, capped + coding penalty + DRO (DRO lambda=10) | 0.101 | $199,405 | $662,486 | $861,892 | 11.1% |
+| CMS form, capped + coding penalty + DRO (DRO lambda=20) | 0.101 | $227,654 | $670,684 | $898,338 | 11.5% |
+| CMS form, capped + coding penalty + DRO (DRO lambda=50) | 0.101 | $254,619 | $662,489 | $917,107 | 11.8% |
 
 **Table 6.** Net compensation by group before and after the plan responds: predicted minus observed spending per person-year.
 
@@ -126,14 +152,14 @@
 
 | Group | CMS form, ungamed | post-response | CMS form, coding-penalized (lambda=1), ungamed | post-response | CMS form, capped + penalized + DRO, trained against the plan, ungamed | post-response | Tweedie boosting, ungamed | post-response | Boosting, capped + DRO, trained against the plan, ungamed | post-response | Fair stacked (paper 6), ungamed | post-response |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Needs ADL or IADL help | -$9,915 | -$5,764 | -$12,462 | -$9,661 | -$14,002 | -$11,348 | -$5,677 | -$2,856 | -$7,668 | -$1,975 | $847 | $6,270 |
-| Age 65 and over | $22 | $2,952 | -$14 | $1,322 | -$1,761 | -$437 | -$455 | $1,455 | -$993 | $2,260 | $2,629 | $6,279 |
-| Uninsured all year | $1,212 | $1,645 | $1,233 | $1,590 | $830 | $1,120 | $567 | $778 | $681 | $1,004 | -$532 | -$42 |
-| Income below 200% FPL | $331 | $1,888 | -$32 | $888 | -$777 | $101 | $6 | $789 | -$120 | $1,194 | $209 | $2,100 |
-| Mental health condition | $4 | $2,735 | -$381 | $1,065 | -$1,251 | $222 | $550 | $2,069 | $96 | $2,692 | $382 | $3,922 |
-| Non-Hispanic Black | $86 | $1,379 | -$123 | $623 | -$759 | -$23 | -$5 | $740 | -$24 | $1,146 | -$138 | $1,325 |
-| Hispanic | $294 | $1,470 | $255 | $962 | -$303 | $350 | $92 | $517 | $137 | $759 | -$576 | $331 |
-| Non-Hispanic Asian | $591 | $1,657 | $832 | $1,357 | $191 | $736 | $301 | $753 | $409 | $1,161 | -$47 | $947 |
+| Needs ADL or IADL help | -$9,915 | -$5,921 | -$12,452 | -$10,109 | -$11,885 | -$9,518 | -$5,677 | -$2,284 | -$5,795 | -$1,790 | $847 | $6,639 |
+| Age 65 and over | $22 | $3,118 | -$14 | $1,346 | $106 | $1,317 | -$455 | $1,678 | -$437 | $1,440 | $2,629 | $6,299 |
+| Uninsured all year | $1,212 | $1,652 | $1,233 | $1,561 | $1,110 | $1,459 | $567 | $675 | $569 | $657 | -$532 | -$50 |
+| Income below 200% FPL | $331 | $1,757 | -$30 | $854 | $9 | $936 | $6 | $851 | -$7 | $799 | $209 | $2,035 |
+| Mental health condition | $4 | $2,437 | -$384 | $1,011 | $162 | $1,720 | $550 | $2,204 | $491 | $2,193 | $382 | $3,820 |
+| Non-Hispanic Black | $86 | $1,352 | -$122 | $600 | -$109 | $714 | -$5 | $858 | -$31 | $729 | -$138 | $1,333 |
+| Hispanic | $294 | $1,354 | $255 | $939 | $164 | $900 | $92 | $542 | $85 | $459 | -$576 | $306 |
+| Non-Hispanic Asian | $591 | $1,614 | $830 | $1,273 | $710 | $1,287 | $301 | $731 | $338 | $730 | -$47 | $913 |
 
 **Table 7.** Training against the plan: extraction on the training rows by iteration.
 
@@ -141,30 +167,29 @@
 
 | Formula | Iteration | Extraction | Coding | Selection | Change | Folds |
 |---|---:|---:|---:|---:|---:|---:|
-| CMS form, trained against the plan | 1 | $1,442,450 | $747,474 | $694,976 | 9.60% | 15 |
-| CMS form, trained against the plan | 2 | $1,238,117 | $606,915 | $631,203 | 5.36% | 15 |
-| CMS form, trained against the plan | 3 | $1,317,293 | $674,253 | $643,040 | 5.22% | 15 |
-| CMS form, trained against the plan | 4 | $1,219,582 | $595,613 | $623,968 | 5.33% | 15 |
-| CMS form, trained against the plan | 5 | $1,331,504 | $686,250 | $645,254 | 5.18% | 15 |
-| CMS form, trained against the plan | 10 | $1,237,005 | $608,746 | $628,259 | 5.33% | 15 |
-| CMS form, trained against the plan | 15 | $1,319,431 | $677,506 | $641,925 | 5.25% | 15 |
-| CMS form, trained against the plan | 20 | $1,229,594 | $605,590 | $624,004 | 5.20% | 15 |
-| CMS form, coding-penalized, trained against the plan | 1 | $748,994 | $92,121 | $656,873 | 9.74% | 15 |
-| CMS form, coding-penalized, trained against the plan | 2 | $697,944 | $76,414 | $621,530 | 0.75% | 15 |
-| CMS form, capped + penalized + DRO, trained against the plan | 1 | $827,468 | $174,218 | $653,250 | 10.16% | 15 |
-| CMS form, capped + penalized + DRO, trained against the plan | 2 | $724,489 | $118,630 | $605,859 | 1.48% | 15 |
-| CMS form, capped + penalized + DRO, trained against the plan | 3 | $728,848 | $122,975 | $605,873 | 1.37% | 14 |
-| CMS form, capped + penalized + DRO, trained against the plan | 4 | $719,005 | $116,053 | $602,952 | 1.47% | 12 |
-| CMS form, capped + penalized + DRO, trained against the plan | 5 | $728,842 | $123,224 | $605,617 | 1.57% | 11 |
-| CMS form, capped + penalized + DRO, trained against the plan | 10 | $726,482 | $119,482 | $607,000 | 1.81% | 6 |
-| CMS form, capped + penalized + DRO, trained against the plan | 15 | $739,999 | $126,796 | $613,203 | 2.04% | 6 |
-| CMS form, capped + penalized + DRO, trained against the plan | 20 | $729,940 | $124,977 | $604,963 | 1.83% | 4 |
-| Boosting, capped + DRO, trained against the plan | 1 | $484,724 | $694,796 | -$210,072 | 8.36% | 5 |
-| Boosting, capped + DRO, trained against the plan | 2 | $794,135 | $941,850 | -$147,715 | 8.28% | 5 |
-| Boosting, capped + DRO, trained against the plan | 3 | $1,157,610 | $1,205,242 | -$47,632 | 8.59% | 5 |
-| Boosting, capped + DRO, trained against the plan | 4 | $858,967 | $1,004,497 | -$145,530 | 8.95% | 5 |
-| Boosting, capped + DRO, trained against the plan | 5 | $1,152,394 | $1,221,096 | -$68,702 | 11.56% | 5 |
-| Boosting, capped + DRO, trained against the plan | 10 | $1,176,476 | $1,269,434 | -$92,958 | 9.57% | 5 |
+| CMS form, trained against the plan | 1 | $1,495,273 | $695,315 | $799,958 | 11.96% | 15 |
+| CMS form, trained against the plan | 2 | $1,331,604 | $592,681 | $738,922 | 4.97% | 15 |
+| CMS form, trained against the plan | 3 | $1,372,302 | $625,556 | $746,747 | 4.72% | 15 |
+| CMS form, trained against the plan | 4 | $1,357,626 | $605,158 | $752,468 | 4.06% | 15 |
+| CMS form, trained against the plan | 5 | $1,358,551 | $617,584 | $740,967 | 4.14% | 15 |
+| CMS form, trained against the plan | 10 | $1,364,698 | $617,223 | $747,475 | 3.86% | 15 |
+| CMS form, trained against the plan | 15 | $1,361,876 | $610,885 | $750,991 | 3.96% | 15 |
+| CMS form, trained against the plan | 20 | $1,367,274 | $613,974 | $753,300 | 3.74% | 15 |
+| CMS form, coding-penalized, trained against the plan | 1 | $746,962 | $66,541 | $680,421 | 9.57% | 15 |
+| CMS form, coding-penalized, trained against the plan | 2 | $700,984 | $54,498 | $646,486 | 0.91% | 15 |
+| CMS form, coding-penalized, trained against the plan | 3 | $691,430 | $53,439 | $637,991 | 1.13% | 5 |
+| CMS form, coding-penalized, trained against the plan | 4 | $680,884 | $52,896 | $627,988 | 0.58% | 3 |
+| CMS form, capped + penalized + DRO, trained against the plan | 1 | $763,381 | $106,889 | $656,492 | 10.18% | 15 |
+| CMS form, capped + penalized + DRO, trained against the plan | 2 | $700,892 | $87,755 | $613,138 | 0.99% | 15 |
+| CMS form, capped + penalized + DRO, trained against the plan | 3 | $688,777 | $83,253 | $605,524 | 1.16% | 7 |
+| CMS form, capped + penalized + DRO, trained against the plan | 4 | $685,098 | $84,469 | $600,629 | 0.96% | 5 |
+| CMS form, capped + penalized + DRO, trained against the plan | 5 | $654,229 | $78,223 | $576,005 | 1.10% | 2 |
+| Boosting, capped + DRO, trained against the plan | 1 | $856,461 | $559,878 | $296,583 | 7.59% | 15 |
+| Boosting, capped + DRO, trained against the plan | 2 | $875,078 | $579,997 | $295,081 | 7.57% | 15 |
+| Boosting, capped + DRO, trained against the plan | 3 | $921,997 | $610,273 | $311,725 | 7.03% | 15 |
+| Boosting, capped + DRO, trained against the plan | 4 | $915,471 | $601,386 | $314,086 | 6.03% | 15 |
+| Boosting, capped + DRO, trained against the plan | 5 | $854,809 | $564,087 | $290,722 | 6.85% | 15 |
+| Boosting, capped + DRO, trained against the plan | 10 | $886,192 | $583,949 | $302,243 | 6.71% | 15 |
 
 **Table 8.** The 20 codes the CMS form pays most for, and what the robust formulas pay for them.
 
@@ -172,35 +197,35 @@
 
 | CCSR | Condition | Prevalence | Incremental cost | CMS form | Penalized | Robust | Robust, trained |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| NVS015 | Polyneuropathies | 0.8% | $16,955 | $12,514 | $2,157 | $2,646 | $2,292 |
-| MUS003 | Rheumatoid arthritis and related disease | 1.3% | $12,555 | $11,071 | $2,074 | $3,006 | $2,668 |
-| NVS009 | Epilepsy; convulsions | 0.9% | $12,003 | $10,419 | $2,103 | $2,806 | $2,526 |
-| GEN006 | Other specified and unspecified diseases of kidney and ureters | 0.8% | $14,081 | $9,896 | $2,139 | $2,748 | $2,494 |
-| CIR019 | Heart failure | 0.4% | $15,142 | $9,619 | $1,873 | $2,233 | $2,021 |
-| MUS026 | Muscle disorders | 0.7% | $10,878 | $8,417 | $1,903 | $2,442 | $2,145 |
-| NEO030 | Breast cancer - all other types | 0.7% | $7,707 | $7,382 | $2,080 | $2,396 | $2,091 |
-| EYE005 | Retinal and vitreous conditions | 1.1% | $8,523 | $7,311 | $2,089 | $2,353 | $2,131 |
-| RSP008 | Chronic obstructive pulmonary disease and bronchiectasis | 1.3% | $10,448 | $6,472 | $2,026 | $2,503 | $2,321 |
-| MBD003 | Bipolar and related disorders | 0.8% | $8,095 | $6,326 | $1,965 | $2,415 | $2,153 |
-| INF009 | Parasitic, other specified and unspecified infections | 0.5% | $9,288 | $6,104 | $2,015 | $2,186 | $1,932 |
-| GEN008 | Urinary incontinence | 0.5% | $10,028 | $5,977 | $2,013 | $2,115 | $1,890 |
-| END002+END005 | Diabetes mellitus without complication | 7.8% | $5,399 | $5,608 | $2,308 | $3,797 | $2,892 |
-| SKN001 | Skin and subcutaneous tissue infections | 1.1% | $7,835 | $5,576 | $2,077 | $2,509 | $2,098 |
-| NEO039 | Male reproductive system cancers - prostate | 0.5% | $5,066 | $5,543 | $2,033 | $2,220 | $1,941 |
-| DIG008 | Other specified and unspecified disorders of stomach and duodenum | 1.1% | $7,304 | $5,415 | $2,027 | $2,265 | $2,014 |
-| EYE001 | Cornea and external disease | 0.8% | $5,811 | $5,101 | $2,011 | $1,985 | $1,717 |
-| MUS013 | Osteoporosis | 0.5% | $5,842 | $4,899 | $1,833 | $1,883 | $1,712 |
-| BLD003 | Aplastic anemia | 0.5% | $8,140 | $4,742 | $2,105 | $2,157 | $1,890 |
-| SYM016 | Other general signs and symptoms | 3.0% | $7,707 | $4,495 | $2,150 | $2,738 | $2,428 |
+| NVS015 | Polyneuropathies | 0.8% | $16,955 | $12,504 | $2,196 | $2,754 | $2,640 |
+| MUS003 | Rheumatoid arthritis and related disease | 1.3% | $12,555 | $11,038 | $2,110 | $3,208 | $3,101 |
+| NVS009 | Epilepsy; convulsions | 0.9% | $12,003 | $10,419 | $2,097 | $2,789 | $2,718 |
+| GEN006 | Other specified and unspecified diseases of kidney and ureters | 0.8% | $14,081 | $9,883 | $2,159 | $2,854 | $2,920 |
+| CIR019 | Heart failure | 0.4% | $15,142 | $9,534 | $1,835 | $2,368 | $2,446 |
+| MUS026 | Muscle disorders | 0.7% | $10,878 | $8,394 | $1,888 | $2,483 | $2,486 |
+| NEO030 | Breast cancer - all other types | 0.7% | $7,707 | $7,382 | $2,197 | $2,782 | $2,997 |
+| EYE005 | Retinal and vitreous conditions | 1.1% | $8,523 | $7,301 | $2,144 | $2,488 | $2,581 |
+| RSP008 | Chronic obstructive pulmonary disease and bronchiectasis | 1.3% | $10,448 | $6,500 | $2,127 | $2,732 | $2,817 |
+| MBD003 | Bipolar and related disorders | 0.8% | $8,095 | $6,326 | $1,971 | $2,445 | $2,376 |
+| INF009 | Parasitic, other specified and unspecified infections | 0.5% | $9,288 | $6,108 | $2,019 | $2,185 | $2,183 |
+| GEN008 | Urinary incontinence | 0.5% | $10,028 | $5,955 | $2,045 | $2,189 | $2,238 |
+| END002+END005 | Diabetes mellitus without complication | 7.8% | $5,399 | $5,593 | $2,326 | $3,854 | $3,799 |
+| SKN001 | Skin and subcutaneous tissue infections | 1.1% | $7,835 | $5,576 | $2,071 | $2,493 | $2,424 |
+| NEO039 | Male reproductive system cancers - prostate | 0.5% | $5,066 | $5,528 | $2,135 | $2,737 | $2,438 |
+| DIG008 | Other specified and unspecified disorders of stomach and duodenum | 1.1% | $7,304 | $5,412 | $2,024 | $2,266 | $2,259 |
+| EYE001 | Cornea and external disease | 0.8% | $5,811 | $5,104 | $2,009 | $1,977 | $1,941 |
+| MUS013 | Osteoporosis | 0.5% | $5,842 | $4,838 | $1,810 | $1,870 | $1,923 |
+| BLD003 | Aplastic anemia | 0.5% | $8,140 | $4,742 | $2,116 | $2,173 | $2,169 |
+| SYM016 | Other general signs and symptoms | 3.0% | $7,707 | $4,495 | $2,143 | $2,707 | $2,740 |
 
 **Table 8b.** Payment per condition and per body system under each formula (full-sample fits).
 
 | Formula | Per condition | Per body system |
 |---|---:|---:|
 | cms | $575 | $536 |
-| cms_pen_1 | $1,505 | $544 |
-| cms_cap_pen_dro_1 | $1,619 | $401 |
-| cms_robust_adv | $1,560 | $194 |
+| cms_pen_1 | $1,499 | $544 |
+| cms_cap_pen_dro_1 | $1,595 | $403 |
+| cms_robust_adv | $1,636 | $337 |
 
 **Table 9.** Sensitivity of extraction to the plan, one parameter at a time from the calibrated point.
 
@@ -208,39 +233,40 @@
 
 | Parameter | Value | CMS form | CMS form, coding-penalized (lambda=1) | CMS form, capped + penalized + DRO, trained against the plan |
 |---|---:|---:|---:|---:|
-| cost per code | 0.0 | $1,575,687 | $836,511 | $808,452 |
-| cost per code | 250.0 | $1,561,434 | $821,478 | $793,429 |
-| cost per code | 500.0 | $1,547,230 | $806,446 | $778,407 |
-| cost per code | 1000.0 | $1,517,990 | $776,380 | $748,363 |
-| cost per code | 2000.0 | $1,456,158 | $715,024 | $687,570 |
-| cost per code | 3000.0 | $1,395,834 | $675,959 | $626,072 |
-| codes per person | 1 | $1,517,990 | $776,380 | $748,363 |
-| codes per person | 2 | $2,294,024 | $867,272 | $882,289 |
-| codes per person | 3 | $2,998,860 | $964,563 | $1,002,833 |
-| reach | 1 | $8,264,403 | $1,559,494 | $1,860,493 |
-| reach | 0.02 | $944,580 | $712,029 | $660,096 |
-| reach | 0.04 | $1,229,359 | $745,379 | $703,036 |
-| reach | 0.05 | $1,372,112 | $761,550 | $726,194 |
-| reach | 0.06 | $1,517,990 | $776,380 | $748,363 |
-| reach | 0.075 | $1,732,554 | $798,234 | $783,506 |
-| reach | 0.1 | $2,086,192 | $836,722 | $837,268 |
-| reach | 0.25 | $4,197,896 | $1,074,023 | $1,134,928 |
-| reach | 0.5 | $7,413,432 | $1,392,125 | $1,608,201 |
-| tilt | 0.0 | $748,204 | $92,275 | $119,713 |
-| tilt | 0.05 | $940,646 | $263,297 | $276,872 |
-| tilt | 0.1 | $1,133,091 | $434,322 | $434,033 |
-| tilt | 0.5 | $2,672,753 | $1,802,630 | $1,691,414 |
-| tilt | 0.2 | $1,517,990 | $776,380 | $748,363 |
-| tilt | 0.3 | $1,902,899 | $1,118,451 | $1,062,703 |
-| plausibility | either | $1,517,990 | $776,380 | $748,363 |
-| plausibility | system | $1,465,552 | $744,533 | $739,308 |
-| plausibility | use | $1,514,200 | $774,861 | $745,868 |
-| plausibility | any | $1,530,294 | $787,621 | $755,384 |
-| plan cost model | WLS | $1,269,086 | $560,526 | $560,051 |
-| share of added codes real | 0.0 | $1,517,990 | $776,380 | $748,363 |
-| share of added codes real | 1 | $305,254 | $424,523 | $245,223 |
-| share of added codes real | 0.25 | $1,221,646 | $688,929 | $618,754 |
-| share of added codes real | 0.5 | $919,341 | $602,447 | $489,975 |
+| cost per code | 0.0 | $1,398,127 | $803,732 | $839,793 |
+| cost per code | 250.0 | $1,383,112 | $788,719 | $824,779 |
+| cost per code | 500.0 | $1,368,096 | $773,705 | $809,765 |
+| cost per code | 1000.0 | $1,338,065 | $743,678 | $779,736 |
+| cost per code | 2000.0 | $1,278,003 | $684,728 | $719,680 |
+| cost per code | 3000.0 | $1,217,941 | $675,384 | $676,172 |
+| codes per person | 1 | $1,338,065 | $743,678 | $779,736 |
+| codes per person | 2 | $1,843,407 | $811,706 | $867,188 |
+| codes per person | 3 | $2,261,311 | $876,479 | $940,814 |
+| reach | 1 | $3,524,712 | $1,017,130 | $1,161,849 |
+| reach | 0.02 | $929,098 | $702,991 | $716,878 |
+| reach | 0.06 | $1,338,065 | $743,678 | $779,736 |
+| reach | 0.1 | $1,660,530 | $788,323 | $833,189 |
+| reach | 0.25 | $2,552,429 | $919,956 | $982,015 |
+| reach | 0.5 | $3,372,877 | $1,017,130 | $1,147,951 |
+| audit exposure | 0.0 | $1,534,681 | $773,097 | $875,244 |
+| audit exposure | 500.0 | $1,460,675 | $751,739 | $819,433 |
+| audit exposure | 2000.0 | $1,338,065 | $743,678 | $779,736 |
+| audit exposure | 5000.0 | $1,219,642 | $739,504 | $754,451 |
+| tilt | 0.0 | $566,196 | $66,357 | $105,244 |
+| tilt | 0.1 | $952,123 | $405,009 | $442,485 |
+| tilt | 0.5 | $2,495,985 | $1,759,786 | $1,791,554 |
+| tilt | 0.05 | $759,157 | $235,681 | $273,863 |
+| tilt | 0.2 | $1,338,065 | $743,678 | $779,736 |
+| tilt | 0.3 | $1,724,023 | $1,082,364 | $1,116,998 |
+| plan cost model | boosting on F3 only | $1,317,983 | $745,281 | $771,508 |
+| plan cost model | WLS on F3 | $1,076,106 | $531,229 | $572,959 |
+| plausibility | system | $1,276,705 | $720,251 | $761,136 |
+| plausibility | use | $1,340,802 | $744,701 | $781,099 |
+| plausibility | any | $1,351,512 | $754,713 | $792,207 |
+| share of added codes real | 0.0 | $1,338,065 | $743,678 | $779,736 |
+| share of added codes real | 1 | $273,908 | $356,605 | $274,838 |
+| share of added codes real | 0.25 | $1,084,901 | $647,558 | $655,368 |
+| share of added codes real | 0.5 | $819,672 | $553,968 | $520,915 |
 
 **Table 10.** Robustness rows.
 
@@ -248,21 +274,21 @@
 
 | Variant | Formula | R², ungamed | Coding | Selection | Total |
 |---|---:|---:|---:|---:|---:|
-| persons 65 and over | CMS form | 0.066 | $1,498,673 | $1,454,734 | $2,953,407 |
-| persons 65 and over | CMS form, coding-penalized (lambda=1) | 0.068 | $103,279 | $1,243,391 | $1,346,671 |
-| persons 65 and over | CMS form, capped + penalized + DRO (lambda=1) | 0.070 | $202,353 | $1,137,991 | $1,340,344 |
-| persons 65 and over | Tweedie boosting | 0.167 | $1,591,765 | $281,886 | $1,873,650 |
-| persons 65 and over | Boosting, capped + DRO | 0.167 | $1,591,398 | $355,983 | $1,947,381 |
-| persons 65 and over | CMS form, coding-penalized, trained against the plan | 0.065 | $88,450 | $1,163,155 | $1,251,606 |
-| persons 65 and over | CMS form, capped + penalized + DRO, trained against the plan | 0.066 | $146,424 | $1,088,392 | $1,234,816 |
-| F3 (prior use) for the penalized form | F3 (prior use) for the penalized form | 0.112 | $11,501 | $650,823 | $662,324 |
-| F3 (prior use) for the robust form | F3 (prior use) for the robust form | 0.115 | $91,877 | $654,880 | $746,757 |
-| DRO alpha 0.05 | DRO alpha 0.05 | 0.105 | $225,862 | $711,355 | $937,216 |
-| DRO alpha 0.20 | DRO alpha 0.20 | 0.104 | $121,656 | $614,743 | $736,399 |
-| squared-error boosting | squared-error boosting | 0.201 | $826,294 | $319,149 | $1,145,443 |
-| leave one panel out | CMS form | 0.105 | $735,783 | $768,858 | $1,504,641 |
-| leave one panel out | CMS form, coding-penalized (lambda=1) | 0.103 | $92,222 | $657,519 | $749,741 |
-| leave one panel out | Tweedie boosting | 0.190 | $793,246 | $184,161 | $977,407 |
+| persons 65 and over (subgroup of all-age results) | CMS form | 0.066 | $1,379,219 | $1,513,814 | $2,893,033 |
+| persons 65 and over (subgroup of all-age results) | CMS form, coding-penalized (lambda=1) | 0.068 | $88,120 | $1,270,904 | $1,359,024 |
+| persons 65 and over (subgroup of all-age results) | CMS form, capped + coding penalty + DRO (DRO lambda=1) | 0.070 | $58,081 | $1,174,195 | $1,232,276 |
+| persons 65 and over (subgroup of all-age results) | Tweedie boosting | 0.167 | $1,314,639 | $459,713 | $1,774,352 |
+| persons 65 and over (subgroup of all-age results) | Boosting, capped + DRO | 0.167 | $1,315,851 | $491,998 | $1,807,850 |
+| persons 65 and over (subgroup of all-age results) | CMS form, coding-penalized, trained against the plan | 0.068 | $86,911 | $1,277,228 | $1,364,139 |
+| persons 65 and over (subgroup of all-age results) | CMS form, capped + penalized + DRO, trained against the plan | 0.070 | $48,978 | $1,220,698 | $1,269,676 |
+| F3 (prior use) for the penalized form | F3 (prior use) for the penalized form | 0.112 | $554 | $635,168 | $635,722 |
+| F3 (prior use) for the robust form | F3 (prior use) for the robust form | 0.115 | $29,817 | $646,680 | $676,497 |
+| DRO alpha 0.05 | DRO alpha 0.05 | 0.105 | $148,342 | $684,459 | $832,801 |
+| DRO alpha 0.20 | DRO alpha 0.20 | 0.104 | $67,978 | $613,115 | $681,093 |
+| squared-error boosting | squared-error boosting | 0.201 | $642,547 | $309,196 | $951,744 |
+| leave one panel out | CMS form | 0.105 | $558,635 | $750,517 | $1,309,152 |
+| leave one panel out | CMS form, coding-penalized (lambda=1) | 0.103 | $66,399 | $685,679 | $752,078 |
+| leave one panel out | Tweedie boosting | 0.190 | $662,542 | $256,702 | $919,244 |
 
 
 # Appendix tables
@@ -274,28 +300,28 @@
 
 | CCSR | Condition | Prevalence | Plausible share | CMS-form coefficient | Incremental cost |
 |---|---:|---:|---:|---:|---:|
-| NVS015 | Polyneuropathies | 0.8% | 42.1% | $11,532 | $16,955 |
-| MUS003 | Rheumatoid arthritis and related disease | 1.3% | 44.2% | $10,203 | $12,555 |
+| NVS015 | Polyneuropathies | 0.8% | 34.0% | $11,532 | $16,955 |
+| MUS003 | Rheumatoid arthritis and related disease | 1.3% | 34.4% | $10,203 | $12,555 |
 | NVS009 | Epilepsy; convulsions | 0.9% | 42.1% | $9,438 | $12,003 |
-| GEN006 | Other specified and unspecified diseases of kidney and ureters | 0.8% | 41.6% | $8,879 | $14,081 |
-| CIR019 | Heart failure | 0.4% | 46.3% | $8,772 | $15,142 |
-| MUS026 | Muscle disorders | 0.7% | 44.9% | $7,555 | $10,878 |
-| NEO030 | Breast cancer - all other types | 0.7% | 41.0% | $6,327 | $7,707 |
-| EYE005 | Retinal and vitreous conditions | 1.1% | 42.0% | $6,300 | $8,523 |
-| RSP008 | Chronic obstructive pulmonary disease and bronchiectasis | 1.3% | 46.4% | $5,550 | $10,448 |
-| MBD003 | Bipolar and related disorders | 0.8% | 44.0% | $5,386 | $8,095 |
-| INF009 | Parasitic, other specified and unspecified infections | 0.5% | 44.3% | $5,088 | $9,288 |
-| GEN008 | Urinary incontinence | 0.5% | 41.9% | $4,964 | $10,028 |
-| END002+END005 | Diabetes mellitus without complication | 7.8% | 39.2% | $4,721 | $5,399 |
+| GEN006 | Other specified and unspecified diseases of kidney and ureters | 0.8% | 34.4% | $8,879 | $14,081 |
+| CIR019 | Heart failure | 0.4% | 28.7% | $8,772 | $15,142 |
+| MUS026 | Muscle disorders | 0.7% | 39.3% | $7,555 | $10,878 |
+| NEO030 | Breast cancer - all other types | 0.7% | 16.5% | $6,327 | $7,707 |
+| EYE005 | Retinal and vitreous conditions | 1.1% | 27.3% | $6,300 | $8,523 |
+| RSP008 | Chronic obstructive pulmonary disease and bronchiectasis | 1.3% | 31.2% | $5,550 | $10,448 |
+| MBD003 | Bipolar and related disorders | 0.8% | 39.0% | $5,386 | $8,095 |
+| INF009 | Parasitic, other specified and unspecified infections | 0.5% | 40.5% | $5,088 | $9,288 |
+| GEN008 | Urinary incontinence | 0.5% | 21.3% | $4,964 | $10,028 |
+| END002+END005 | Diabetes mellitus without complication | 7.8% | 35.9% | $4,721 | $5,399 |
 | SKN001 | Skin and subcutaneous tissue infections | 1.1% | 42.4% | $4,552 | $7,835 |
-| NEO039 | Male reproductive system cancers - prostate | 0.5% | 41.1% | $4,490 | $5,066 |
-| DIG008 | Other specified and unspecified disorders of stomach and duodenum | 1.1% | 42.3% | $4,428 | $7,304 |
-| EYE001 | Cornea and external disease | 0.8% | 42.2% | $4,095 | $5,811 |
-| MUS013 | Osteoporosis | 0.5% | 45.0% | $4,037 | $5,842 |
-| BLD003 | Aplastic anemia | 0.5% | 40.4% | $3,632 | $8,140 |
+| NEO039 | Male reproductive system cancers - prostate | 0.5% | 10.3% | $4,490 | $5,066 |
+| DIG008 | Other specified and unspecified disorders of stomach and duodenum | 1.1% | 40.2% | $4,428 | $7,304 |
+| EYE001 | Cornea and external disease | 0.8% | 41.4% | $4,095 | $5,811 |
+| MUS013 | Osteoporosis | 0.5% | 20.3% | $4,037 | $5,842 |
+| BLD003 | Aplastic anemia | 0.5% | 30.5% | $3,632 | $8,140 |
 | SYM016 | Other general signs and symptoms | 3.0% | 41.6% | $3,531 | $7,707 |
-| RSP016 | Other specified and unspecified lower respiratory disease | 0.7% | 46.9% | $3,435 | $6,600 |
-| FAC010 | Other aftercare encounter | 0.6% | 45.0% | $3,223 | $7,177 |
-| DIG001 | Intestinal infection | 0.6% | 42.8% | $3,217 | $5,371 |
-| MBD014 | Neurodevelopmental disorders | 3.3% | 41.5% | $2,990 | $4,693 |
-| GEN004 | Urinary tract infections | 2.4% | 40.0% | $2,643 | $4,729 |
+| RSP016 | Other specified and unspecified lower respiratory disease | 0.7% | 43.2% | $3,435 | $6,600 |
+| FAC010 | Other aftercare encounter | 0.6% | 39.8% | $3,223 | $7,177 |
+| DIG001 | Intestinal infection | 0.6% | 42.3% | $3,217 | $5,371 |
+| MBD014 | Neurodevelopmental disorders | 3.3% | 37.2% | $2,990 | $4,693 |
+| GEN004 | Urinary tract infections | 2.4% | 37.1% | $2,643 | $4,729 |

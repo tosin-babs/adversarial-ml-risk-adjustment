@@ -39,7 +39,7 @@ def calibration():
 
 
 def plan_for(cost, plausible, pool, cal=None, tilt=None, cost_per_code=None, max_codes=None,
-             reach=None, rule=None):
+             reach=None, rule=None, audit=None):
     cal = cal or calibration()
     return common.adversary.Plan(
         cost_model=Fixed(cost),
@@ -48,11 +48,18 @@ def plan_for(cost, plausible, pool, cal=None, tilt=None, cost_per_code=None, max
         reach=cal["reach"] if reach is None else reach,
         tilt=cal["tilt"] if tilt is None else tilt,
         rule=cal["rule"] if rule is None else rule,
+        audit=cal.get("audit", config.AUDIT_PER_PCT) if audit is None else audit,
         pool=pool, plausible=plausible, count_col=config.COUNT_COL, system_col=config.SYSTEM_COL)
 
 
+def load_set(name, rep, fold, tr, te):
+    z = np.load(config.DERIVED / "plan" / name / f"rep{rep}_fold{fold}.npz")
+    assert np.array_equal(z["train_idx"], tr) and np.array_equal(z["test_idx"], te)
+    return z["cost_train_oof"], z["cost_test"]
+
+
 class Context:
-    def __init__(self, feature_set, rep, fold, tr, te, plausibility=None, cal=None):
+    def __init__(self, feature_set, rep, fold, tr, te, plausibility=None, cal=None, plan_set=None):
         X, y, w, cl, st, attrs = common.build(feature_set)
         self.fs, self.rep, self.fold, self.tr, self.te = feature_set, rep, fold, tr, te
         self.cols = list(X.columns)
@@ -64,11 +71,14 @@ class Context:
         self.masks_tr = common.masks(self.attrs_tr)
         self.masks_te = common.masks(self.attrs_te)
         rule = plausibility or config.PLAUSIBILITY
-        self.Ptr = common.plausibility(self.Xtr, self.cols, self.pool, self.attrs_tr, rule)
-        self.Pte = common.plausibility(self.Xte, self.cols, self.pool, self.attrs_te, rule)
-        plan = np.load(config.DERIVED / "plan" / f"rep{rep}_fold{fold}.npz")
-        assert np.array_equal(plan["train_idx"], tr) and np.array_equal(plan["test_idx"], te)
-        self.cost_tr, self.cost_te = plan["cost_train_oof"], plan["cost_test"]
+        self.cell_prev = common.cell_prevalence(self.Xtr, self.cols, self.pool, self.wtr)
+        sp = self.attrs_tr["spend_y1"].to_numpy(float)
+        med = float(np.median(sp[sp > 0]))
+        self.Ptr = common.plausibility(self.Xtr, self.cols, self.pool, self.attrs_tr, rule, self.cell_prev, med)
+        self.Pte = common.plausibility(self.Xte, self.cols, self.pool, self.attrs_te, rule, self.cell_prev, med)
+        # the plan's beliefs, and the regulator's reference expected cost
+        self.cost_tr, self.cost_te = load_set(plan_set or config.PLAN_SET, rep, fold, tr, te)
+        self.ref_tr, self.ref_te = load_set("ref_F3", rep, fold, tr, te)
         self.cal = cal or calibration()
         self.plan_tr = plan_for(self.cost_tr, self.Ptr, self.pool, self.cal)
         self.plan_te = plan_for(self.cost_te, self.Pte, self.pool, self.cal)
@@ -102,6 +112,11 @@ class Normalized:
         self.factor_ = float(np.sum(w * y) / np.sum(w * p))
         return self
 
+    def take_rows(self, idx):
+        if hasattr(self.model, "take_rows"):
+            self.model.take_rows(idx)
+        return self
+
     def predict(self, X):
         X = np.asarray(X, float)
         if self.dead_.any():
@@ -129,17 +144,16 @@ def _cap(ctx):
 
 
 def _dro(lam, alpha=None):
-    # the reference expected cost is the regulator's cross-fitted flexible
-    # model on the training rows (the same model the plan uses, in the
-    # primary specification)
+    # the reference expected cost is the regulator's own cross-fitted
+    # boosting on F3 (ref_F3), not the plan's model
     return lambda ctx: common.robust.DROPaymentWLS(lam, alpha or config.DRO_ALPHA,
-                                                   reference=ctx.cost_tr).set_columns(ctx.cols)
+                                                   reference=ctx.ref_tr).set_columns(ctx.cols)
 
 
 def _combo(lam_code, lam_dro, capped=False, alpha=None):
     return lambda ctx: common.robust.DROPaymentWLS(
         lam_dro, alpha or config.DRO_ALPHA, ctx.caps if capped else None,
-        lam_code, ctx.pool_weights, reference=ctx.cost_tr).set_columns(ctx.cols)
+        lam_code, ctx.pool_weights, reference=ctx.ref_tr).set_columns(ctx.cols)
 
 
 def _stacked_robust(lam_dro, capped=True, lam_code=0.0):
@@ -164,6 +178,44 @@ class _Fair:
         return self.m.predict(X)
 
 
+class StackelbergPenalized:
+    """The coding penalty with its weight chosen against the plan's best
+    response: a Stackelberg choice over the family, the regulator moving first
+    and anticipating the plan. For each weight on STACKELBERG_GRID the plan
+    responds on each half of the training rows to the formula fitted on the
+    other half, and the weight with the smallest post-response payment error,
+    sum w s (f(x~) - y)^2 / sum w s, is chosen; the formula is then fitted on
+    all training rows at that weight. The test fold plays no part."""
+
+    GRID = (0.0, 0.25, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0)
+
+    def __init__(self, ctx):
+        self.ctx = ctx
+
+    def fit(self, X, y, w, clusters=None):
+        ctx = self.ctx
+        halves = common.adversary._halves(ctx.cltr, config.SEED + 101 * ctx.rep + ctx.fold)
+        scores = {}
+        for lam in self.GRID:
+            make = (lambda l: (lambda: Normalized(common.robust.PenalizedPaymentWLS(l, ctx.pool_weights)
+                                                  .set_columns(ctx.cols))))(lam)
+            added, s, Xc, row_cost, p0, p1 = common.adversary.respond_cross_fitted(
+                make, ctx.plan_tr, ctx.Xtr, ctx.ytr, ctx.wtr, ctx.cols, halves)
+            ws = ctx.wtr * s
+            scores[lam] = float(np.sum(ws * (p1 - ctx.ytr) ** 2) / np.sum(ws))
+        self.scores_ = scores
+        self.lam_ = min(scores, key=scores.get)
+        self.model = Normalized(common.robust.PenalizedPaymentWLS(self.lam_, ctx.pool_weights).set_columns(ctx.cols))
+        self.model.fit(X, y, w)
+        return self
+
+    def predict(self, X):
+        return self.model.predict(X)
+
+    def coefficients(self):
+        return self.model.coefficients()
+
+
 def _plain(key):
     return lambda ctx: common.make(key, ctx.cols)
 
@@ -181,9 +233,11 @@ for lam in config.PENALTY_GRID[1:]:
     FORMULAS[f"cms_pen_{lam:g}"] = ("penalized", "F2", _pen(lam), f"CMS form, coding-penalized (lambda={lam:g})", lam)
 for lam in config.DRO_LAMBDA_GRID[1:]:
     FORMULAS[f"cms_dro_{lam:g}"] = ("dro", "F2", _dro(lam), f"CMS form, DRO (lambda={lam:g})", lam)
-for lam in config.PENALTY_GRID[1:]:
-    FORMULAS[f"cms_cap_pen_dro_{lam:g}"] = ("combined", "F2", _combo(lam, lam, capped=True),
-                                            f"CMS form, capped + penalized + DRO (lambda={lam:g})", lam)
+for lam in config.DRO_LAMBDA_GRID:
+    FORMULAS[f"cms_cap_pen_dro_{lam:g}"] = ("combined", "F2", _combo(config.COMBO_LAMBDA_CODE, lam, capped=True),
+                                            f"CMS form, capped + coding penalty + DRO (DRO lambda={lam:g})", lam)
+FORMULAS["cms_pen_stack"] = ("stackelberg", "F2", StackelbergPenalized,
+                            "CMS form, coding penalty tuned against the plan (Stackelberg)", None)
 FORMULAS["gbm_cap_dro"] = ("boosted", "F3", _stacked_robust(config.DRO_LAMBDA_GRID[3]),
                            "Boosting, capped + DRO", config.DRO_LAMBDA_GRID[3])
 

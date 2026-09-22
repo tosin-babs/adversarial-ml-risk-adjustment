@@ -15,7 +15,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-import adversarial  # noqa: F401  (registers the adversarial keys)
+import adversarial
 import common
 import config
 import formulas as F
@@ -31,14 +31,21 @@ class _AllRows:
         self.Xtr, self.ytr, self.wtr, self.cltr = X.to_numpy(np.float32), y, w, cl
         self.attrs_tr = attrs
         self.masks_tr = common.masks(attrs)
-        self.Ptr = common.plausibility(self.Xtr, self.cols, self.pool, attrs)
-        f = config.DERIVED / "plan_all_rows.npy"
-        if not f.exists():
-            oof = common.fairness._cross_fit_scores(lambda: common.make(config.PLAN_MODEL),
-                                                    common.build(config.PLAN_MODEL_FEATURES)[0].to_numpy(np.float32),
-                                                    y, w, cl, k=config.PLAN_CROSS_FIT_K, seed=config.SEED)
-            np.save(f, oof)
-        self.cost_tr = np.load(f)
+        self.cell_prev = common.cell_prevalence(self.Xtr, self.cols, self.pool, w)
+        self.Ptr = common.plausibility(self.Xtr, self.cols, self.pool, attrs, cell_prev=self.cell_prev)
+        seeds = {"plan": config.SEED + config.PLAN_SEED_OFFSET, "ref": config.SEED}
+        feats = {"plan": config.PLAN_MODEL_FEATURES, "ref": config.REF_MODEL_FEATURES}
+        got = {}
+        for name in ("plan", "ref"):
+            f = config.DERIVED / f"{name}_all_rows_{feats[name]}.npy"
+            if not f.exists():
+                oof = common.fairness._cross_fit_scores(
+                    lambda: common.models.GBM("tweedie", seed=seeds[name]),
+                    common.build(feats[name])[0].to_numpy(np.float32), y, w, cl,
+                    k=config.PLAN_CROSS_FIT_K, seed=seeds[name])
+                np.save(f, oof)
+            got[name] = np.load(f)
+        self.cost_tr, self.ref_tr = got["plan"], got["ref"]
         self.cal = F.calibration()
         self.plan_tr = F.plan_for(self.cost_tr, self.Ptr, self.pool, self.cal)
         j = {c: self.cols.index(c) for c in self.pool}
@@ -57,7 +64,8 @@ def main():
     make = F.FORMULAS["cms_robust_adv"][2]
     fits["cms_robust_adv"], path = common.adversary.train(lambda: make(ctx), ctx.plan_tr, ctx.Xtr, ctx.ytr,
                                                           ctx.wtr, ctx.cols, iters=config.ADV_ITERS,
-                                                          tol=config.ADV_TOL)
+                                                          tol=config.ADV_TOL, groups=ctx.cltr, seed=config.SEED)
+    adversarial.renormalize(fits["cms_robust_adv"], ctx)
     pd.DataFrame(path).to_csv(config.TABLES / "path_all_rows_cms_robust_adv.csv", index=False)
     labels = pd.read_csv(config.PAPER6 / "data" / "derived" / "ccsr_labels.csv")
     lab = dict(zip(labels.iloc[:, 0], labels.iloc[:, 1]))

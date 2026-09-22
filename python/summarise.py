@@ -41,8 +41,11 @@ def contributions(z):
     definitions live here and older runs need no refit."""
     w, y = z["w"], z["y"]
     cost = z["cost_per_code"] if "cost_per_code" in z else float(F.calibration()["cost_per_code"])
-    return {"coding": w * (z["p1"] - z["p0"]) - cost * w * z["codes"],
+    paid = w * z["row_cost"] if "row_cost" in z else cost * w * z["codes"]
+    return {"coding": w * (z["p1"] - z["p0"]) - paid,
             "selection": w * (z["s"] - 1.0) * (z["p1"] - y),
+            "selection_ungamed": w * (z["s"] - 1.0) * (z["p0"] - y),
+            "selection_interaction": w * (z["s"] - 1.0) * (z["p1"] - z["p0"]),
             "selection_shift": w * (z["s"] - 1.0) * z["p1"]}
 
 
@@ -81,7 +84,9 @@ def main():
         rec = {"key": k, "label": label, "family": family, "feature_set": fs, "param": param}
         for name, fn, field in (("r2_ungamed", r2_full, "p0"), ("r2_post", r2_full, "p1"),
                                 ("coding", per_1000, "coding"), ("selection", per_1000, "selection"),
-                                ("selection_shift", per_1000, "selection_shift")):
+                                ("selection_shift", per_1000, "selection_shift"),
+                                ("selection_ungamed", per_1000, "selection_ungamed"),
+                                ("selection_interaction", per_1000, "selection_interaction")):
             p, lo, hi, b = stat(k, fn, field)
             rec[name], rec[f"{name}_lo"], rec[f"{name}_hi"] = p, lo, hi
             draws[(k, name)] = b
@@ -93,6 +98,16 @@ def main():
         rec["payment_base"] = per_1000(z, *full, "p0") if False else float(np.mean((z["p0"] * z["w"]).sum(axis=1)) * 1000 / z["w"].sum())
         rec["extraction_pct"] = 100 * rec["extraction"] / rec["payment_base"]
         rec["codes_per_1000"] = float(np.mean((z["codes"] * z["w"]).sum(axis=1)) * 1000 / z["w"].sum())
+        rk = zs[k][1]
+        ext_f = rk["coding"] + rk["selection"]
+        rec["extraction_fold_sd"] = float(ext_f.std())
+        rec["extraction_fold_min"] = float(ext_f.min())
+        rec["extraction_fold_max"] = float(ext_f.max())
+        rec["payment_to_cost"] = float(np.mean((z["p0"] * z["w"]).sum(axis=1)) / (z["y"] * z["w"]).sum())
+        if "distinct_codes" in rk:
+            rec["distinct_codes"] = float(rk["distinct_codes"].mean())
+            rec["top_code_share"] = float(rk["top_code_share"].mean())
+            rec["top_codes"] = ", ".join(rk["top_code"].value_counts().index[:3])
         rows.append(rec)
     df = pd.DataFrame(rows)
     # paired differences against the CMS form

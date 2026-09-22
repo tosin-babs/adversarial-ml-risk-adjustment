@@ -31,19 +31,21 @@ OOF = config.DERIVED / "oof"
 OOF.mkdir(exist_ok=True)
 
 
-def evaluate(f, ctx, plan=None, tag=""):
-    """One fitted formula on one test fold: metrics and per-row contributions."""
+def evaluate(f, ctx, plan=None, tag="", G=None):
+    """One fitted formula on one test fold: metrics and per-row contributions.
+    G, the plan's gain matrix for this formula and fold, can be passed to
+    reuse it across plan settings."""
     plan = plan or ctx.plan_te
     A = common.adversary
     X, y, w = ctx.Xte, ctx.yte, ctx.wte
     p0 = f.predict(X)
-    added, s, Xc = plan.respond(f.predict, X, w, ctx.cols)
+    added, s, Xc = plan.respond(f.predict, X, w, ctx.cols, G=G)
     p1 = f.predict(Xc)
     codes = added.sum(axis=1).astype(float)
     row = {"rep": ctx.rep, "fold": ctx.fold,
            "r2_ungamed": common.metrics.r2(y, p0, w),
            "r2_post": common.metrics.r2(y, p1, w * s),
-           **A.extraction(f.predict, X, Xc, w, s, y, added, plan.cost_per_code)}
+           **A.extraction(f.predict, X, Xc, w, s, y, added, plan.cost_per_code, row_cost=plan.row_cost_)}
     g0 = common.metrics.group_fairness(y, p0, w, ctx.masks_te)
     g1 = common.metrics.group_fairness(y, p1, w * s, ctx.masks_te)
     for name in g0:
@@ -51,8 +53,14 @@ def evaluate(f, ctx, plan=None, tag=""):
         row[f"nc_post|{name}"] = g1[name]["nc"]
         row[f"sel_share|{name}"] = float(np.sum(w[ctx.masks_te[name]] * s[ctx.masks_te[name]])
                                          / np.sum(w[ctx.masks_te[name]]))
+    added_codes = np.flatnonzero(added.sum(axis=0) > 0)
+    counts = added.sum(axis=0)
+    row["distinct_codes"] = int(len(added_codes))
+    row["top_code_share"] = float(counts.max() / max(counts.sum(), 1))
+    row["top_code"] = ctx.pool[int(np.argmax(counts))][5:] if counts.sum() else ""
     per_row = {"p0": p0, "p1": p1, "s": s, "codes": codes,
-               "coding": w * (p1 - p0) - plan.cost_per_code * w * codes,
+               "row_cost": plan.row_cost_.copy(),
+               "coding": w * (p1 - p0) - w * plan.row_cost_,
                "selection": w * (s - 1.0) * (p1 - y)}
     return row, per_row
 
@@ -66,12 +74,14 @@ def run(key, splits, plausibility=None, cal=None, tag=None):
     X, y, w, cl, st, attrs = common.build(fs)
     n = len(y)
     reps = sorted({r for r, *_ in splits})
-    store = {k: np.full((len(reps), n), np.nan) for k in ("p0", "p1", "s", "codes", "coding", "selection")}
+    store = {k: np.full((len(reps), n), np.nan) for k in ("p0", "p1", "s", "codes", "row_cost", "coding", "selection")}
     rows, t0 = [], time.time()
     for rep, fold, tr, te in splits:
         ctx = F.Context(fs, rep, fold, tr, te, plausibility, cal)
         f = make(ctx).fit(ctx.Xtr, ctx.ytr, ctx.wtr, clusters=ctx.cltr)
         row, per = evaluate(f, ctx)
+        inner = getattr(f, "model", None)
+        row["lambda_chosen"] = getattr(inner, "lam_", np.nan)
         rows.append({"key": key, "label": label, "family": family, "feature_set": fs, "param": param, **row})
         for k in store:
             store[k][rep, te] = per[k]

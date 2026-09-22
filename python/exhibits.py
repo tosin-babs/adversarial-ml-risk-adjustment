@@ -42,8 +42,10 @@ def figure_frontier():
         ax.plot(x, y, "-o", color=col, ms=3.5, lw=1.4, label=lab)
     for key, lab, col, mk in (("cms", "CMS form", P["ink"], "s"), ("gbm", "Tweedie boosting", P["gbm"], "D"),
                               ("fair", "Fair stacked (paper 6)", P["nn"], "^"),
-                              ("cms_robust_adv", "Robust CMS form, trained against the plan", P["fair"], "*"),
-                              ("gbm_robust_adv", "Robust boosting, trained against the plan", P["gbm"], "*")):
+                              ("cms_pen_stack", "Coding penalty tuned against the plan", P["linear"], "P"),
+                              ("cms_adv", "CMS form, retrained against the plan", P["muted"], "X"),
+                              ("cms_robust_adv", "Robust CMS form, retrained against the plan", P["fair"], "*"),
+                              ("gbm_robust_adv", "Boosting, retrained against the plan", P["gbm"], "*")):
         d = t[t["key"] == key]
         if len(d):
             ax.plot(d["extraction"] / 1000, d["r2_ungamed"], mk, color=col, ms=8 if mk == "*" else 6, label=lab, zorder=5)
@@ -80,23 +82,23 @@ def figure_group_gaps():
 def figure_calibration():
     c = pd.read_csv(T / "table4_calibration.csv")
     cal = json.loads((config.DERIVED / "calibration.json").read_text())
-    d = c[(c["channel"] == "coding") & (c["cost_per_code"] == cal["cost_per_code"])]
-    w = d.pivot_table(index="max_codes", columns="reach", values="payment_rise_pct")
-    fig, ax = plt.subplots(figsize=(6.2, 2.8))
-    im = ax.imshow(w.to_numpy(), cmap="Reds", aspect="auto", vmin=0, vmax=min(120, np.nanmax(w.to_numpy())))
+    w = c.pivot_table(index="reach", columns="tilt", values="dist")
+    fig, ax = plt.subplots(figsize=(6.6, 3.8))
+    im = ax.imshow(100 * w.to_numpy(), cmap="Greens_r", aspect="auto")
     ax.set_xticks(range(len(w.columns)))
-    ax.set_xticklabels([f"{100 * r:g}%" for r in w.columns])
+    ax.set_xticklabels([f"{t:g}" for t in w.columns])
     ax.set_yticks(range(len(w.index)))
-    ax.set_yticklabels([int(i) for i in w.index])
-    ax.set_xlabel("Chart-review reach, share of enrollees")
-    ax.set_ylabel("Codes per person")
+    ax.set_yticklabels([f"{100 * r:g}%" for r in w.index])
+    ax.set_xlabel("Selection tilt")
+    ax.set_ylabel("Chart-review reach")
     ax.grid(False)
-    for i in range(w.shape[0]):
-        for j in range(w.shape[1]):
-            v = w.to_numpy()[i, j]
-            ax.text(j, i, f"{v:.0f}%", ha="center", va="center", fontsize=7,
-                    color="white" if v > 60 else P["ink"])
-    fig.colorbar(im, ax=ax, label="Payment rise, CMS form")
+    i, j = list(w.index).index(cal["reach"]), list(w.columns).index(cal["tilt"])
+    ax.add_patch(plt.Rectangle((j - 0.5, i - 0.5), 1, 1, fill=False, ec=P["ink"], lw=2))
+    for a_ in range(w.shape[0]):
+        for b_ in range(w.shape[1]):
+            ax.text(b_, a_, f"{100 * w.to_numpy()[a_, b_]:.1f}", ha="center", va="center", fontsize=6.5,
+                    color="white" if w.to_numpy()[a_, b_] > 0.2 else P["ink"])
+    fig.colorbar(im, ax=ax, label="Distance from MedPAC targets (points)")
     _save(fig, "fig3_calibration")
 
 

@@ -24,9 +24,12 @@ def test_primary_feature_set_has_no_prior_use():
     assert config.PRIMARY_FEATURE_SET == "F2"
 
 
-def test_calibration_targets_are_medpac_magnitudes():
-    assert abs(config.CODING_TARGET - (0.16 - 0.059)) < 1e-12
-    assert abs(config.SELECTION_TARGET - 44 / 500) < 1e-12
+def test_calibration_targets_share_one_denominator():
+    # MedPAC: $40bn coding and $44bn selection of $84bn, which is 20% of
+    # fee-for-service-equivalent spending (so about $420bn)
+    base = 84.0 / 0.20
+    assert abs(config.CODING_TARGET - 40.0 / base) < 1e-12
+    assert abs(config.SELECTION_TARGET - 44.0 / base) < 1e-12
 
 
 @pytest.mark.skipif(not DATA, reason="Paper 6 data absent")
@@ -51,7 +54,7 @@ def test_plan_cost_model_never_sees_test_rows():
     import common
     X, y, w, cl, st, attrs = common.build("F2")
     for rep, fold, tr, te in common.folds(cl, st)[:3]:
-        f = config.DERIVED / "plan" / f"rep{rep}_fold{fold}.npz"
+        f = config.DERIVED / "plan" / config.PLAN_SET / f"rep{rep}_fold{fold}.npz"
         if not f.exists():
             pytest.skip("plan models not built")
         z = np.load(f)

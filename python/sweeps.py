@@ -28,21 +28,18 @@ import common
 import config
 import formulas as F
 
-KEYS = ("cms", "cms_pen_1", "cms_robust_adv")
+KEYS = ("cms", "cms_pen_1", "cms_robust_adv", "gbm")
 
 
-def less_able_cost(ctx):
-    """A plan whose cost model is unconstrained WLS on F3."""
-    X3 = common.build("F3")[0].to_numpy(np.float32)
-    m = common.make("wls").fit(X3[ctx.tr], ctx.ytr, ctx.wtr)
-    return m.predict(X3[ctx.te])
+def plan_set_cost(name, ctx):
+    return F.load_set(name, ctx.rep, ctx.fold, ctx.tr, ctx.te)[1]
 
 
-def real_coding(ctx, f, q, rng):
+def real_coding(ctx, f, q, rng, G=None):
     """Evaluate with a share q of added codes real: the person's cost rises by
     the code's incremental cost."""
     plan = ctx.plan_te
-    added, s, Xc = plan.respond(f.predict, ctx.Xte, ctx.wte, ctx.cols)
+    added, s, Xc = plan.respond(f.predict, ctx.Xte, ctx.wte, ctx.cols, G=G)
     real = added & (rng.random(added.shape) < q)
     extra = np.zeros(len(ctx.yte))
     for qq, c in enumerate(ctx.pool):
@@ -52,10 +49,11 @@ def real_coding(ctx, f, q, rng):
     w = ctx.wte
     codes = float(np.sum(w * added.sum(axis=1)))
     k = 1000.0 / w.sum()
-    coding = (float(np.sum(w * (p1 - p0 - extra))) - plan.cost_per_code * codes) * k
+    coding = (float(np.sum(w * (p1 - p0 - extra))) - float(np.sum(w * plan.row_cost_))) * k
     selection = float(np.sum(w * (s - 1.0) * (p1 - y))) * k
     return {"coding": coding, "selection": selection, "extraction": coding + selection,
-            "r2_ungamed": common.metrics.r2(ctx.yte, p0, ctx.wte)}
+            "r2_ungamed": common.metrics.r2(ctx.yte, p0, ctx.wte),
+            "distinct_codes": int((added.sum(axis=0) > 0).sum())}
 
 
 def main():
@@ -64,48 +62,53 @@ def main():
     cal = F.calibration()
     rows = []
     for rep, fold, tr, te in splits:
-        ctxs = {rule: F.Context(config.PRIMARY_FEATURE_SET, rep, fold, tr, te, plausibility=rule)
-                for rule in config.PLAUSIBILITY_RULES}
-        ctx = ctxs[config.PLAUSIBILITY]
-        fits = {}
+        ctx2 = {rule: F.Context("F2", rep, fold, tr, te, plausibility=rule) for rule in config.PLAUSIBILITY_RULES}
+        ctx3 = F.Context("F3", rep, fold, tr, te)
         for key in KEYS:
+            fs = F.FORMULAS[key][1]
+            ctx = ctx2[config.PLAUSIBILITY] if fs == "F2" else ctx3
             make = F.FORMULAS[key][2]
             if key in adversarial.ADVERSARIAL:
-                fits[key], _ = common.adversary.train(lambda: make(ctx), ctx.plan_tr, ctx.Xtr, ctx.ytr, ctx.wtr,
-                                                      ctx.cols, iters=config.ADV_ITERS, tol=config.ADV_TOL)
+                f, _ = common.adversary.train(lambda: make(ctx), ctx.plan_tr, ctx.Xtr, ctx.ytr, ctx.wtr,
+                                              ctx.cols, iters=config.ADV_ITERS, tol=config.ADV_TOL, groups=ctx.cltr, seed=config.SEED)
+                adversarial.renormalize(f, ctx)
             else:
-                fits[key] = make(ctx).fit(ctx.Xtr, ctx.ytr, ctx.wtr, clusters=ctx.cltr)
-        variants = []
-        for c in config.COST_PER_CODE_GRID:
-            variants.append(("cost per code", c, dict(cost_per_code=c)))
-        for k in config.MAX_CODES_GRID:
-            variants.append(("codes per person", k, dict(max_codes=k)))
-        for r in config.REACH_GRID:
-            variants.append(("reach", r, dict(reach=r)))
-        for t in config.TILT_GRID:
-            variants.append(("tilt", t, dict(tilt=t)))
-        variants.append(("selection rule", "smooth", dict(rule="smooth", tilt=cal["tilt"] * 10)))
-        for key, f in fits.items():
-            for name, value, kw in variants:
-                plan = F.plan_for(ctx.cost_te, ctx.Pte, ctx.pool, cal, **kw)
-                row, _ = benchmark.evaluate(f, ctx, plan)
+                f = make(ctx).fit(ctx.Xtr, ctx.ytr, ctx.wtr, clusters=ctx.cltr)
+            G = common.adversary.gain_matrix(f.predict, ctx.Xte, ctx.cols, ctx.pool, ctx.Pte,
+                                             config.COUNT_COL, config.SYSTEM_COL)
+
+            def ev(name, value, plan, c=ctx, g=G):
+                row, _ = benchmark.evaluate(f, c, plan, G=g)
                 rows.append({"key": key, "sweep": name, "value": value, "rep": rep, "fold": fold, **row})
-            for rule, c2 in ctxs.items():
-                plan = F.plan_for(c2.cost_te, c2.Pte, c2.pool, cal)
-                row, _ = benchmark.evaluate(f, c2, plan)
-                rows.append({"key": key, "sweep": "plausibility", "value": rule, "rep": rep, "fold": fold, **row})
-            plan = F.plan_for(less_able_cost(ctx), ctx.Pte, ctx.pool, cal)
-            row, _ = benchmark.evaluate(f, ctx, plan)
-            rows.append({"key": key, "sweep": "plan cost model", "value": "WLS", "rep": rep, "fold": fold, **row})
+            for v in config.COST_PER_CODE_GRID:
+                ev("cost per code", v, F.plan_for(ctx.cost_te, ctx.Pte, ctx.pool, cal, cost_per_code=v))
+            for v in config.MAX_CODES_GRID:
+                ev("codes per person", v, F.plan_for(ctx.cost_te, ctx.Pte, ctx.pool, cal, max_codes=v))
+            for v in (0.02, 0.06, 0.10, 0.25, 0.50, 1.0):
+                ev("reach", v, F.plan_for(ctx.cost_te, ctx.Pte, ctx.pool, cal, reach=v))
+            for v in config.AUDIT_GRID:
+                ev("audit exposure", v, F.plan_for(ctx.cost_te, ctx.Pte, ctx.pool, cal, audit=v))
+            for v in (0.0, 0.05, 0.10, 0.20, 0.30, 0.50):
+                ev("tilt", v, F.plan_for(ctx.cost_te, ctx.Pte, ctx.pool, cal, tilt=v))
+            for name, label in (("plan_F3", "boosting on F3 only"),
+                                ("plan_wls_F3", "WLS on F3")):
+                ev("plan cost model", label, F.plan_for(plan_set_cost(name, ctx), ctx.Pte, ctx.pool, cal))
+            if fs == "F2":
+                for rule, c2 in ctx2.items():
+                    if rule == config.PLAUSIBILITY:
+                        continue
+                    g2 = common.adversary.gain_matrix(f.predict, c2.Xte, c2.cols, c2.pool, c2.Pte,
+                                                      config.COUNT_COL, config.SYSTEM_COL)
+                    ev("plausibility", rule, F.plan_for(c2.cost_te, c2.Pte, c2.pool, cal), c=c2, g=g2)
             for q in (0.0, 0.25, 0.5, 1.0):
-                r = real_coding(ctx, f, q, np.random.default_rng(config.SEED + fold))
+                r = real_coding(ctx, f, q, np.random.default_rng(config.SEED + fold), G)
                 rows.append({"key": key, "sweep": "share of added codes real", "value": q, "rep": rep, "fold": fold, **r})
         print(f"  rep {rep} fold {fold} done", flush=True)
     df = pd.DataFrame(rows)
     df.to_csv(config.TABLES / "sweeps_by_fold.csv", index=False)
     g = df.groupby(["key", "sweep", "value"], sort=False).agg(
         r2_ungamed=("r2_ungamed", "mean"), coding=("coding", "mean"), selection=("selection", "mean"),
-        extraction=("extraction", "mean")).reset_index()
+        extraction=("extraction", "mean"), distinct_codes=("distinct_codes", "mean")).reset_index()
     g["label"] = g["key"].map(lambda k: F.FORMULAS[k][3])
     g.to_csv(config.TABLES / "table9_sweeps.csv", index=False)
     with pd.option_context("display.width", 200, "display.float_format", "{:,.0f}".format):

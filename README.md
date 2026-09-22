@@ -15,26 +15,33 @@ It is a simulation of incentives on survey data, not evidence about any plan.
 
 ## Headline results
 
-Per 1,000 enrollees of survey weight, out of fold, 95% Rao-Wu PSU bootstrap
-intervals paired across formulas.
+Per 1,000 enrollees of survey weight a year, out of fold, 95% Rao-Wu PSU
+bootstrap intervals paired across formulas. The plan sees health-risk-assessment
+information the formulas do not, pays for every code it adds, responds out of
+sample, and is calibrated on training data to MedPAC's $40 billion of coding and
+$44 billion of selection. Every formula pays the same budget.
 
 | Formula | R², ungamed | Extracted by the plan | Share of payment |
 |---|---:|---:|---:|
-| CMS form (payment-form WLS, no prior use) | 0.098 | $1,517,780 | 19.5% |
-| CMS form, cost-capped | 0.098 | $1,513,844 | 19.4% |
-| CMS form, coding penalty | 0.096 | $776,138 | 10.0% |
-| CMS form, worst-subgroup penalty | 0.102 | $1,074,322 | 13.8% |
-| Tweedie boosting (with prior use) | 0.187 | $767,263 | 9.9% |
-| Fair stacked estimator (companion paper) | 0.169 | $1,687,160 | 21.7% |
-| CMS form, coding penalty, trained against the plan | 0.094 | $723,737 | 10.3% |
-| CMS form, trained against the plan, no penalty | 0.098 | $1,386,344 (never converges) | 19.7% |
-| Boosting, trained against the plan | 0.175 | $1,314,914 (diverges) | 17.1% |
+| CMS form (payment-form WLS, no prior use) | 0.098 | $1,337,599 | 17.1% |
+| CMS form, cost-capped | 0.098 | $1,328,701 | 17.0% |
+| CMS form, coding penalty (λ = 1) | 0.096 | $743,433 | 9.5% |
+| CMS form, coding penalty tuned against the plan (Stackelberg) | 0.091 | $731,169 | 9.4% |
+| CMS form, worst-subgroup penalty | 0.102 | $953,648 | 12.2% |
+| CMS form, retrained against the plan (never converges) | 0.099 | $1,122,389 | 14.4% |
+| Coding penalty, retrained against the plan | 0.097 | $748,865 | 9.6% |
+| Tweedie boosting (with prior use) | 0.187 | $755,299 | 9.7% |
+| Boosting, retrained against the plan (never converges) | 0.186 | $675,774 | 8.7% |
+| Fair stacked estimator (companion paper) | 0.169 | $1,557,041 | 20.1% |
 
 - A coding penalty removes 88% of the coding channel; caps at incremental cost
-  remove none of it, because an added code changes nothing about cost.
+  remove none of it, because the formula already pays codes less than those caps.
 - No formula built on diagnoses closes the selection channel.
+- Retraining against the plan helps unprotected formulas but never settles, and
+  adds nothing once the penalty is in place.
 - Every formula that resists coding underpays people needing help with daily
-  activities by more than the CMS form ($9,915 per person-year), up to $14,002.
+  activities by more than the CMS form ($9,915 per person-year), up to $13,760,
+  and the plan enrolls fewer of them.
 
 ## Reproducing
 
@@ -65,15 +72,15 @@ Seeded throughout. No MEPS microdata are in this repository.
 
 ## Citation
 
-Ologunbaba, T., Adiegwu, C., & Temitope, A. (2026). *Adversarial Machine
+Ologunbaba, T., Adiegwu, C. G., & Temitope, A. (2026). *Adversarial Machine
 Learning for Medicare Risk Adjustment: Training Payment Formulas Against a
 Strategic Health Plan*. Working paper.
 
 ## Authors
 
 - Temitope Ologunbaba, Faculty of Engineering, Federal University of Technology, Akure, Nigeria, ologubabatopeeee2351@futa.edu.ng (corresponding)
-- Chisom Adiegwu, Department of Actuarial Science and Quantitative Risk Analysis and Management, Georgia State University, Atlanta, GA, USA
-- Adebolu Temitope, Department of Epidemiology and Medical Statistics, University of Ibadan, Ibadan, Nigeria
+- Chisom G. Adiegwu, Department of Actuarial Science and Quantitative Risk Analysis and Management, Georgia State University, Atlanta, GA, USA, Cadiegwu1@student.gsu.edu
+- Adebolu Temitope, Department of Epidemiology and Medical Statistics, University of Ibadan, Ibadan, Nigeria, temitopeadebolu5@gmail.com
 
 ## License
 

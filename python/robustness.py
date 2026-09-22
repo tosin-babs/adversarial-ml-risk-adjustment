@@ -1,8 +1,9 @@
 """
 Robustness rows: Table 10.
 
-  65 and over          the stored out-of-fold results restricted to persons
-                       65 and over (no refit)
+  65 and over          a subgroup decomposition: the stored all-age
+                       out-of-fold results restricted to persons 65 and over
+                       (no refit and no recalibration of the plan)
   F3 for the CMS form  the coding-penalized and robust forms with prior use
   squared-error boosting
   DRO alpha 0.05 / 0.20
@@ -36,7 +37,7 @@ def over_65():
             continue
         z, _ = summarise.load(k)
         idx, mult = np.flatnonzero(m), np.ones(int(m.sum()))
-        rows.append({"variant": "persons 65 and over", "key": k, "label": F.FORMULAS[k][3],
+        rows.append({"variant": "persons 65 and over (subgroup of all-age results)", "key": k, "label": F.FORMULAS[k][3],
                      "r2_ungamed": summarise.r2_full(z, idx, mult, "p0"),
                      "coding": summarise.per_1000(z, idx, mult, "coding"),
                      "selection": summarise.per_1000(z, idx, mult, "selection")})
@@ -68,14 +69,20 @@ def refits():
         parts = []
         for p in sorted(np.unique(panel)):
             tr, te = np.flatnonzero(panel != p), np.flatnonzero(panel == p)
-            # the plan's cost model for this split, cross-fitted on the training panels
-            oof = common.fairness._cross_fit_scores(lambda: common.make(config.PLAN_MODEL),
-                                                    common.build("F3")[0].to_numpy(np.float32)[tr], yf[tr], wf[tr],
-                                                    clf[tr], k=config.PLAN_CROSS_FIT_K, seed=config.SEED)
-            mplan = common.make(config.PLAN_MODEL).fit(common.build("F3")[0].to_numpy(np.float32)[tr], yf[tr], wf[tr], clusters=clf[tr])
-            cost_te = mplan.predict(common.build("F3")[0].to_numpy(np.float32)[te])
-            np.savez(config.DERIVED / "plan" / f"rep9_fold{p}.npz", train_idx=tr, test_idx=te,
-                     cost_train_oof=oof, cost_test=cost_te)
+            # the plan's and the regulator's cost models for this split,
+            # cross-fitted on the training panels
+            for name, (pfs, pseed) in {"plan_F4": (config.PLAN_MODEL_FEATURES, config.SEED + config.PLAN_SEED_OFFSET),
+                                       "ref_F3": (config.REF_MODEL_FEATURES, config.SEED)}.items():
+                Xp = common.build(pfs)[0].to_numpy(np.float32)
+                d = config.DERIVED / "plan" / name
+                d.mkdir(parents=True, exist_ok=True)
+                f9 = d / f"rep9_fold{p}.npz"
+                if not f9.exists():
+                    mk = lambda: common.models.GBM("tweedie", seed=pseed)  # noqa: E731
+                    oof = common.fairness._cross_fit_scores(mk, Xp[tr], yf[tr], wf[tr], clf[tr],
+                                                            k=config.PLAN_CROSS_FIT_K, seed=pseed)
+                    cost_te = mk().fit(Xp[tr], yf[tr], wf[tr], clusters=clf[tr]).predict(Xp[te])
+                    np.savez(f9, train_idx=tr, test_idx=te, cost_train_oof=oof, cost_test=cost_te)
             ctx = F.Context(fs, 9, int(p), tr, te)
             f = make(ctx).fit(ctx.Xtr, ctx.ytr, ctx.wtr, clusters=ctx.cltr)
             row, _ = benchmark.evaluate(f, ctx)

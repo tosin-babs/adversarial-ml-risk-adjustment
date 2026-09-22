@@ -14,7 +14,7 @@ import config
 OUT = config.ROOT / "manuscript" / "tables.md"
 T = config.TABLES
 
-MAIN_KEYS = ["cms", "cms_F3", "wls", "gbm", "fair", "cms_cap", "cms_pen_1", "cms_dro_5", "cms_cap_pen_dro_1",
+MAIN_KEYS = ["cms", "cms_F3", "wls", "gbm", "fair", "cms_cap", "cms_pen_1", "cms_pen_stack", "cms_dro_5", "cms_cap_pen_dro_1",
              "gbm_cap_dro", "cms_adv", "cms_pen_adv", "cms_robust_adv", "gbm_robust_adv"]
 GROUPS = ["Needs ADL or IADL help", "Age 65 and over", "Uninsured all year", "Income below 200% FPL",
           "Mental health condition", "Non-Hispanic Black", "Hispanic", "Non-Hispanic Asian"]
@@ -64,10 +64,11 @@ def main():
     rob = {"reference": "none", "capped": "cap at incremental cost", "penalized": "coding penalty",
            "dro": "worst-subgroup penalty", "combined": "cap, coding penalty, worst-subgroup penalty",
            "boosted": "cap, worst-subgroup penalty on the linear layer",
-           "adversarial": "as the base formula"}
+           "adversarial": "as the base formula",
+           "stackelberg": "coding penalty, weight chosen against the plan's response"}
     f1 = t3[t3["key"].isin(MAIN_KEYS)].copy()
     f1["robust"] = f1["family"].map(rob)
-    f1["trained"] = np.where(f1["family"] == "adversarial", "yes", "no")
+    f1["trained"] = np.where(f1["family"] == "adversarial", "retrained", np.where(f1["family"] == "stackelberg", "tuned", "no"))
     f1["order"] = f1["key"].map({k: i for i, k in enumerate(MAIN_KEYS)})
     f1 = f1.sort_values("order")
     parts += [caption(1, "The formulas compared.",
@@ -80,22 +81,23 @@ def main():
 
     # 2 calibration
     c = pd.read_csv(T / "table4_calibration.csv")
-    cod = c[(c["channel"] == "coding") & (c["max_codes"] == cal["max_codes"]) & (c["cost_per_code"] == cal["cost_per_code"])]
-    sel = c[c["channel"] == "selection"]
-    parts += [caption(2, "Calibrating the plan against the CMS form.",
-                      f"Coding: one code per reviewed person at ${cal['cost_per_code']:,.0f} per code, by chart-review "
-                      f"reach; the calibrated reach is {100 * cal['reach']:.0f}%, where the gross payment rise is "
-                      f"closest to the target of {cal['coding_target_pct']:.1f}% (MedPAC's 16% coding intensity less "
-                      f"the 5.9% statutory adjustment). Selection: threshold rule by tilt; the calibrated tilt is "
-                      f"{cal['tilt']:.2f}, where the plan's profit is closest to {cal['selection_target_pct']:.1f}% of "
-                      f"payment (MedPAC's $44 billion of favorable selection on about $500 billion of payment). "
-                      "Means over the 15 test folds."),
-              render(cod, ["reach", "payment_rise_pct", "net_rise_pct", "codes_per_1000"],
-                     [pct(0) if False else (lambda x: f"{100 * x:.0f}%"), pct(1), pct(1), num(0)],
-                     ["Reach", "Payment rise", "Net of code cost", "Codes per 1,000"]),
+    at = c[c["tilt"] == cal["tilt"]].sort_values("reach")
+    by_tilt = c[c["reach"] == cal["reach"]].sort_values("tilt")
+    parts += [caption(2, "Calibrating the plan against the CMS form, on training rows.",
+                      f"One code per reviewed person at ${cal['cost_per_code']:,.0f} a code, with audit exposure of "
+                      f"${cal['audit']:,.0f} per 1% of enrollees already given the same code. Targets: coding "
+                      f"{cal['coding_target_pct']:.1f}% and selection {cal['selection_target_pct']:.1f}% of base payment "
+                      "(MedPAC's $40 billion and $44 billion over a fee-for-service-equivalent base of about $420 "
+                      f"billion). The calibrated point is {100 * cal['reach']:.0f}% reach and tilt {cal['tilt']:.2f}. "
+                      "Upper panel: by reach at the calibrated tilt. Lower panel: by tilt at the calibrated reach. "
+                      "Means over the training rows of the 15 splits."),
+              render(at, ["reach", "coding_pct", "selection_pct", "codes_per_1000", "distinct_codes", "top_code_share", "dist"],
+                     [lambda x: f"{100 * x:g}%", pct(1), pct(1), num(0), num(1), lambda x: f"{100 * x:.0f}%", lambda x: f"{100 * x:.1f}"],
+                     ["Reach", "Coding", "Selection", "Codes per 1,000", "Distinct codes", "Top code share", "Distance (points)"]),
               "",
-              render(sel, ["tilt", "payment_rise_pct", "profit_share_pct"], [num(2), pct(1), pct(1)],
-                     ["Tilt", "Payment shift", "Profit, share of payment"])]
+              render(by_tilt, ["tilt", "coding_pct", "selection_pct", "dist"],
+                     [num(2), pct(1), pct(1), lambda x: f"{100 * x:.1f}"],
+                     ["Tilt", "Coding", "Selection", "Distance (points)"])]
 
     # 3 extraction
     m = t3[t3["key"].isin(MAIN_KEYS)].copy()
@@ -104,14 +106,23 @@ def main():
     m["ci_c"] = m.apply(interval("coding_lo", "coding_hi"), axis=1)
     m["ci_s"] = m.apply(interval("selection_lo", "selection_hi"), axis=1)
     m["ci_e"] = m.apply(interval("extraction_lo", "extraction_hi"), axis=1)
+    m["ci_su"] = m["selection_ungamed"]
     parts += [caption(3, "What the calibrated plan extracts from each formula, per 1,000 enrollees.",
                       "Coding: payment for added codes, net of the cost of adding them, for codes that change "
                       "nothing about cost. Selection: payment above cost from tilting enrollment toward the "
-                      "half of enrollees the plan expects to be overpaid. Share is of base payment. 95% "
-                      "bootstrap intervals in parentheses."),
+                      "half of enrollees the plan expects to be overpaid, split in the lower panel into the part on "
+                      "the formula's ungamed payment and the part from tilting toward people the plan coded. Share "
+                      "is of base payment. 95% bootstrap intervals in parentheses; fold range over the 15 test folds. "
+                      "Distinct codes and top code share describe the plan's coding per fold."),
               render(m, ["label", "coding", "ci_c", "selection", "ci_s", "extraction", "ci_e", "extraction_pct"],
                      [None, dollars(), None, dollars(), None, dollars(), None, pct(1)],
-                     ["Formula", "Coding", "", "Selection", "", "Total", "", "Share"])]
+                     ["Formula", "Coding", "", "Selection", "", "Total", "", "Share"]),
+              "",
+              render(m, ["label", "selection_ungamed", "selection_interaction", "extraction_fold_min", "extraction_fold_max",
+                         "distinct_codes", "top_code_share"],
+                     [None, dollars(), dollars(), dollars(), dollars(), num(1), lambda x: "" if pd.isna(x) else f"{100 * x:.0f}%"],
+                     ["Formula", "Selection on ungamed payment", "Selection on coded people", "Lowest fold", "Highest fold",
+                      "Distinct codes used", "Top code share"])]
 
     # 4 accuracy
     m["ci_r"] = m.apply(interval("r2_ungamed_lo", "r2_ungamed_hi", num(3)), axis=1)
