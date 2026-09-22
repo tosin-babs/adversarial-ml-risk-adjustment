@@ -8,7 +8,7 @@
 
 ³ Department of Epidemiology and Medical Statistics, University of Ibadan, Ibadan, Nigeria.
 
-**Email.** Temitope Ologunbaba: ologubabatopeeee2351@futa.edu.ng; Chisom G. Adiegwu: Cadiegwu1@student.gsu.edu; Adebolu Temitope: temitopeadebolu5@gmail.com.
+**Email.** Temitope Ologunbaba: ologunbabatope@gmail.com; Chisom G. Adiegwu: Cadiegwu1@student.gsu.edu; Adebolu Temitope: temitopeadebolu5@gmail.com.
 
 **Word count.** 6,876 excluding abstract, tables, figure captions and references.
 
