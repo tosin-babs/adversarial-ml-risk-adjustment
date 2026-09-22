@@ -2,7 +2,7 @@
 
 **Temitope Ologunbaba**¹ *(corresponding author)*, **Chisom G. Adiegwu**², **Adebolu Temitope**³
 
-¹ Faculty of Engineering, Federal University of Technology, Akure, Nigeria.
+¹ Department of Electrical Engineering, Federal University of Technology, Akure, Nigeria.
 
 ² Department of Actuarial Science and Quantitative Risk Analysis and Management, Georgia State University, Atlanta, GA, USA.
 
