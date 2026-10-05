@@ -2,13 +2,15 @@
 
 **Temitope Ologunbaba**¹ *(corresponding author)*, **Chisom G. Adiegwu**², **Adebolu Temitope**³
 
-¹ Department of Electrical Engineering, Federal University of Technology, Akure, Nigeria.
+¹ Independent researcher.
 
-² Department of Actuarial Science and Quantitative Risk Analysis and Management, Georgia State University, Atlanta, GA, USA.
+² Maurice R. Greenberg School of Risk Science, J. Mack Robinson College of Business, Georgia State University, Atlanta, GA, USA.
 
 ³ Department of Epidemiology and Medical Statistics, University of Ibadan, Ibadan, Nigeria.
 
 **Email.** Temitope Ologunbaba: ologunbabatope@gmail.com; Chisom G. Adiegwu: Cadiegwu1@student.gsu.edu; Adebolu Temitope: temitopeadebolu5@gmail.com.
+
+**Date.** September 2026.
 
 **Word count.** 6,876 excluding abstract, tables, figure captions and references.
 
@@ -226,7 +228,7 @@ A strategic plan with more information than the regulator, calibrated to MedPAC'
 
 ## References
 
-1. Ologunbaba, T., Olamilekan, E. Z., Babalola, O. D., & Adiegwu, C. G. (2026). Interpretable and fair machine learning for health-cost prediction and risk adjustment: a reproducible benchmark on public data and an open-source toolkit. Working paper, Georgia State University.
+1. Ologunbaba, T., Olamilekan, E. Z., Babalola, O. D., & Adiegwu, C. G. (2026). Interpretable and fair machine learning for health-cost prediction and risk adjustment: a reproducible benchmark on public data and an open-source toolkit. Working paper.
 2. Bergquist, S. L., Layton, T. J., McGuire, T. G., & Rose, S. (2019). Data transformations to improve the performance of health plan payment methods. *Journal of Health Economics*, 66, 195–207. doi:10.1016/j.jhealeco.2019.05.005
 3. Brown, J., Duggan, M., Kuziemko, I., & Woolston, W. (2014). How does risk selection respond to risk adjustment? New evidence from the Medicare Advantage program. *American Economic Review*, 104(10), 3335–3364. doi:10.1257/aer.104.10.3335
 4. Centers for Medicare & Medicaid Services (2023). *Announcement of Calendar Year (CY) 2024 Medicare Advantage (MA) Capitation Rates and Part C and Part D Payment Policies*. 31 March 2023. Baltimore, MD: CMS.
