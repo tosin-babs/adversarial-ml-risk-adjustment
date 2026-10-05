@@ -226,7 +226,7 @@ A strategic plan with more information than the regulator, calibrated to MedPAC'
 
 ## References
 
-1. Ologunbaba, T., Babalola, O. D., Adiegwu, C. G., & Olamilekan, E. Z. (2026). Interpretable and fair machine learning for health-cost prediction and risk adjustment: a reproducible benchmark on public data and an open-source toolkit. Working paper, Georgia State University.
+1. Ologunbaba, T., Olamilekan, E. Z., Babalola, O. D., & Adiegwu, C. G. (2026). Interpretable and fair machine learning for health-cost prediction and risk adjustment: a reproducible benchmark on public data and an open-source toolkit. Working paper, Georgia State University.
 2. Bergquist, S. L., Layton, T. J., McGuire, T. G., & Rose, S. (2019). Data transformations to improve the performance of health plan payment methods. *Journal of Health Economics*, 66, 195–207. doi:10.1016/j.jhealeco.2019.05.005
 3. Brown, J., Duggan, M., Kuziemko, I., & Woolston, W. (2014). How does risk selection respond to risk adjustment? New evidence from the Medicare Advantage program. *American Economic Review*, 104(10), 3335–3364. doi:10.1257/aer.104.10.3335
 4. Centers for Medicare & Medicaid Services (2023). *Announcement of Calendar Year (CY) 2024 Medicare Advantage (MA) Capitation Rates and Part C and Part D Payment Policies*. 31 March 2023. Baltimore, MD: CMS.
