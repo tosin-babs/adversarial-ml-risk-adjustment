@@ -78,7 +78,7 @@ Strategic Health Plan*. Working paper.
 
 ## Authors
 
-- Temitope Ologunbaba, Independent researcher, ologunbabatope@gmail.com (corresponding)
+- Temitope Ologunbaba, Maurice R. Greenberg School of Risk Science, J. Mack Robinson College of Business, Georgia State University, Atlanta, GA, USA, ologunbabatope@gmail.com (corresponding)
 - Chisom G. Adiegwu, Maurice R. Greenberg School of Risk Science, J. Mack Robinson College of Business, Georgia State University, Atlanta, GA, USA, Cadiegwu1@student.gsu.edu
 - Adebolu Temitope, Department of Epidemiology and Medical Statistics, University of Ibadan, Ibadan, Nigeria, temitopeadebolu5@gmail.com
 

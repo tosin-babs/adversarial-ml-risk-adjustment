@@ -1,12 +1,10 @@
 # Adversarial Machine Learning for Medicare Risk Adjustment: Training Payment Formulas Against a Strategic Health Plan
 
-**Temitope Ologunbaba**¹ *(corresponding author)*, **Chisom G. Adiegwu**², **Adebolu Temitope**³
+**Temitope Ologunbaba**¹ *(corresponding author)*, **Chisom G. Adiegwu**¹, **Adebolu Temitope**²
 
-¹ Independent researcher.
+¹ Maurice R. Greenberg School of Risk Science, J. Mack Robinson College of Business, Georgia State University, Atlanta, GA, USA.
 
-² Maurice R. Greenberg School of Risk Science, J. Mack Robinson College of Business, Georgia State University, Atlanta, GA, USA.
-
-³ Department of Epidemiology and Medical Statistics, University of Ibadan, Ibadan, Nigeria.
+² Department of Epidemiology and Medical Statistics, University of Ibadan, Ibadan, Nigeria.
 
 **Email.** Temitope Ologunbaba: ologunbabatope@gmail.com; Chisom G. Adiegwu: Cadiegwu1@student.gsu.edu; Adebolu Temitope: temitopeadebolu5@gmail.com.
 
